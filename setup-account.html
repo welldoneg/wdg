@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finalize Account | WELLDONE GROUP</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: 'Space Grotesk', sans-serif; background: #0B1120; color: #e2e8f0; min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .bg-glow-1 { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(234,88,12,0.15) 0%, rgba(11,17,32,0) 70%); top: -200px; right: -100px; border-radius: 50%; z-index: 0; pointer-events: none; }
+  .login-card { background: rgba(15, 26, 46, 0.7); backdrop-filter: blur(16px); border: 1px solid #1e293b; border-radius: 20px; padding: 40px; width: 100%; max-width: 440px; z-index: 10; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+  .form-group { margin-bottom: 20px; }
+  .form-label { display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .form-input { width: 100%; background: #0B1120; border: 1px solid #1e293b; color: #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: 14px; outline: none; transition: all 0.2s; }
+  .form-input:focus { border-color: #ea580c; box-shadow: 0 0 0 3px rgba(234,88,12,0.1); }
+  .btn-primary { width: 100%; background: linear-gradient(135deg, #ea580c, #f97316); color: white; border: none; padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(234,88,12,0.3); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  #toast { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast-item { padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.3); animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  @media (max-width: 480px) { .login-card { border-radius: 0; border: none; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; background: #0B1120; } }
+</style>
+</head>
+<body>
+
+<div class="bg-glow-1"></div>
+
+<div class="login-card">
+  <div style="text-align: center; margin-bottom: 32px;">
+    <img src="logo/logo.png" onerror="this.onerror=null; this.src='https://placehold.co/120x40/ea580c/ffffff?text=WELLDONE';" alt="WELLDONE" style="height: 36px; width: auto; margin: 0 auto 20px auto;">
+    <h1 style="font-size: 24px; font-weight: 700; color: #ffffff; margin: 0 0 8px 0;">Finalize Your Account</h1>
+    <p style="font-size: 13px; color: #94a3b8; margin: 0;">Set a secure password to access your dashboard. You must use the email you registered with.</p>
+  </div>
+
+  <form id="setup-form" onsubmit="handleSetup(event)">
+    <div class="form-group">
+      <label class="form-label">Registered Email Address</label>
+      <input type="email" id="email" required class="form-input" placeholder="name@example.com">
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Create Secure Password</label>
+      <input type="password" id="password" required minlength="6" class="form-input" placeholder="••••••••">
+    </div>
+
+    <button type="submit" id="submit-btn" class="btn-primary">
+      Create Account
+    </button>
+  </form>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://eftexnivgkchhrulryan.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_PTpRBa91vJXaLpV6Ku29bQ_tz33JHRD';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function showToast(type, msg) {
+  const container = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item`;
+  el.style.background = type === 'error' ? '#2d0d0d' : '#052e16';
+  el.style.border = type === 'error' ? '1px solid #7f1d1d' : '1px solid #166534';
+  el.style.color = type === 'error' ? '#f87171' : '#4ade80';
+  el.innerHTML = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 5000);
+}
+
+async function handleSetup(e) {
+  e.preventDefault();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('submit-btn');
+
+  btn.disabled = true;
+  btn.innerText = 'Verifying Approval...';
+
+  try {
+    // 1. Check if they exist in Workers
+    let isApproved = false;
+    let foundProfile = false;
+
+    const { data: wData } = await sb.from('workers').select('status').eq('email', email).single();
+    if (wData) {
+        foundProfile = true;
+        if (wData.status === 'APPROVED') isApproved = true;
+    }
+
+    // 2. If not a worker, check Companies
+    if (!foundProfile) {
+        const { data: cData } = await sb.from('companies').select('status').eq('corporate_email', email).single();
+        if (cData) {
+            foundProfile = true;
+            if (cData.status === 'APPROVED') isApproved = true;
+        }
+    }
+
+    // 3. Process Logic
+    if (!foundProfile) throw new Error('We could not find an application with that email address.');
+    if (!isApproved) throw new Error('Your account is pending admin approval. You cannot set a password yet.');
+
+    btn.innerText = 'Creating Secure Account...';
+
+    // 4. Mint the secure Supabase Auth account
+    const { data: authData, error: authError } = await sb.auth.signUp({
+      email: email,
+      password: password
+    });
+
+    if (authError) {
+      if (authError.message.includes('already registered')) {
+         throw new Error('This email is already secured. Please go to the Login page.');
+      }
+      throw authError;
+    }
+
+    showToast('success', 'Account secured! You can now log into your dashboard.');
+    setTimeout(() => window.location.href = 'login.html', 2000);
+
+  } catch (error) {
+    showToast('error', error.message);
+    btn.disabled = false;
+    btn.innerText = 'Create Account';
+  }
+}
+</script>
+</body>
+</html>

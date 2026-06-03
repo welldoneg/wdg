@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Portal | WELLDONE GROUP</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+      colors: {
+        brand: { 900: '#0B1120', 800: '#1e293b', 700: '#273548', 600: '#334155', 500: '#ea580c', 400: '#f97316', 50: '#f8fafc' }
+      }
+    }
+  }
+}
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  
+  :root {
+    --bg-main: #0B1120;
+    --bg-sidebar: #0d1526;
+    --bg-panel: #0f1a2e;
+    --bg-card: #0b1420;
+    --border-color: #1e293b;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+    --input-bg: #1e293b;
+    --hover-bg: #1a2540;
+    --active-bg: #1e2d45;
+  }
+
+  body.light-theme {
+    --bg-main: #f8fafc;
+    --bg-sidebar: #ffffff;
+    --bg-panel: #ffffff;
+    --bg-card: #f8fafc;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --input-bg: #f1f5f9;
+    --hover-bg: #f1f5f9;
+    --active-bg: #fff7ed;
+  }
+
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--bg-main); color: var(--text-primary); overflow: hidden; height: 100vh; margin: 0; transition: background 0.3s, color 0.3s; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-sidebar); }
+  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+
+  #app-root { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 260px; min-width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100vh; z-index: 50; transition: transform 0.3s ease, background 0.3s, border-color 0.3s; }
+  .main-wrap { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .topbar { height: 56px; min-height: 56px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 24px; gap: 16px; transition: background 0.3s, border-color 0.3s; }
+  .content-area { flex: 1; display: flex; overflow: hidden; background: var(--bg-main); transition: background 0.3s; }
+  .view-section { display: none; flex: 1; overflow-y: auto; padding: 24px; width: 100%; height: 100%; }
+
+  .nav-item { display: flex; align-items: center; padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: all 0.15s; color: var(--text-secondary); font-size: 13px; font-weight: 500; margin: 2px 8px; }
+  .nav-item:hover { background: var(--hover-bg); color: var(--text-primary); }
+  .nav-item.active { background: var(--active-bg); color: #ea580c; border-left: 2px solid #ea580c; }
+  
+  .panel-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; transition: background 0.3s, border-color 0.3s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+  
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .form-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; transition: border 0.2s, background 0.3s, color 0.3s; }
+  .form-input:focus { border-color: #ea580c; }
+  
+  .btn-primary { background: linear-gradient(135deg, #ea580c, #f97316); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(234,88,12,0.25); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(234,88,12,0.4); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+  
+  .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; display: inline-block; }
+  .btn-outline:hover { color: var(--text-primary); border-color: var(--text-primary); background: var(--hover-bg); }
+
+  .theme-toggle { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+  .theme-toggle:hover { border-color: #ea580c; color: #ea580c; }
+
+  .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  .badge-live { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+  .badge-pending { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid #d97706; }
+  .badge-draft { background: var(--input-bg); color: var(--text-secondary); border: 1px solid var(--border-color); }
+  
+  .progress-bar-bg { width: 100%; height: 6px; background: var(--input-bg); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .progress-bar-fill { height: 100%; background: #ea580c; border-radius: 3px; transition: width 0.5s ease; }
+
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { text-align: left; padding: 12px 16px; font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color); }
+  .data-table td { padding: 16px; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); }
+  .data-table tr:hover td { background: var(--hover-bg); }
+
+  /* Modals */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(4px); padding: 20px; }
+  .modal-overlay.show { display: flex; align-items: center; justify-content: center; }
+  .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; width: 100%; max-width: 650px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+
+  .mobile-menu-btn { display: none; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); cursor: pointer; padding: 6px; align-items: center; justify-content: center; }
+  @media (max-width: 768px) {
+    body { overflow: auto !important; height: auto !important; }
+    #app-root { flex-direction: column; height: auto; }
+    .sidebar { position: fixed; transform: translateX(-100%); z-index: 200; box-shadow: 4px 0 24px rgba(0,0,0,0.5); }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; }
+    .sidebar-overlay.show { display: block; }
+    
+    .mobile-menu-btn { display: flex; }
+    .topbar { padding: 0 16px; justify-content: space-between; }
+    .content-area { overflow: visible; }
+    .view-section { padding: 16px !important; }
+    .grid-cols-4 { grid-template-columns: 1fr 1fr !important; }
+    .data-table-wrapper { overflow-x: auto; }
+  }
+  
+  #toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast-item { padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; background: #052e16; border: 1px solid #166534; color: #4ade80; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .clickable-progress { padding: 12px; border-radius: 8px; transition: background 0.2s; cursor: pointer; border: 1px solid transparent; }
+  .clickable-progress:hover { background: var(--hover-bg); border-color: var(--border-color); }
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div id="roster-modal-overlay" class="modal-overlay" onclick="closeModal('roster-modal-overlay', event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div style="padding:20px 24px; border-bottom:1px solid var(--border-color); background:var(--bg-sidebar); display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h2 id="modal-shift-title" style="font-size:16px; font-weight:700; color:var(--text-primary); margin:0 0 4px 0;">Shift Roster & Clearance</h2>
+        <div id="modal-shift-sub" style="font-size:12px; color:var(--text-muted); font-family:'JetBrains Mono';">Date & Time</div>
+      </div>
+      <button onclick="closeModal('roster-modal-overlay')" style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer;">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    
+    <div style="padding:0; overflow-y:auto; background:var(--bg-main); flex:1;" id="modal-roster-list">
+      </div>
+  </div>
+</div>
+
+<div id="app-root">
+
+  <div class="sidebar" id="sidebar">
+    <div style="padding: 20px 16px; border-bottom: 1px solid var(--border-color);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <img src="logo/logo.png" onerror="this.onerror=null; this.src='https://placehold.co/120x40/ea580c/ffffff?text=WELLDONE';" alt="WELLDONE" style="height: 26px; width: auto;">
+        <button class="mobile-menu-btn md:hidden" onclick="toggleSidebar()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div style="background: var(--input-bg); border-radius: 8px; padding: 10px 12px;">
+        <div style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px;">Client Portal</div>
+        <div id="sidebar-company-name" style="font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</div>
+        <div style="display:flex; align-items:center; gap:5px; margin-top:4px;">
+          <div style="width:6px; height:6px; border-radius:50%; background:#4ade80;"></div>
+          <span style="font-size:10px; color:var(--text-muted);">Active Session</span>
+        </div>
+      </div>
+    </div>
+
+    <nav style="flex:1; padding: 16px 0; overflow-y:auto;">
+      <div class="nav-item active" onclick="showView('dashboard')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Deployment Monitor
+      </div>
+      <div class="nav-item" onclick="showView('request')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><path d="M12 5v14M5 12h14"/></svg>
+        Request Staff
+      </div>
+      <div class="nav-item" onclick="showView('billing')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Billing & Invoices
+      </div>
+      <div class="nav-item" onclick="showView('documents')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Compliance Docs
+      </div>
+    </nav>
+
+    <div style="padding: 16px; border-top: 1px solid var(--border-color);">
+      <a href="#" onclick="handleSignOut(event)" style="display:flex; align-items:center; gap:10px; padding:10px 16px; border-radius:8px; background:rgba(239, 68, 68, 0.1); color:#ef4444; font-size:13px; font-weight:700; text-decoration:none; transition:0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Sign Out
+      </a>
+    </div>
+  </div>
+
+  <div class="main-wrap">
+    
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div style="flex:1;">
+        <div id="topbar-title" style="font-size:15px; font-weight:700; color:var(--text-primary); letter-spacing:0.03em;">Active Deployment Monitor</div>
+        <div id="topbar-sub" style="font-size:11px; color:var(--text-muted); margin-top:2px;" class="company-name-display">Loading Company...</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+          <svg id="theme-icon-dark" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <svg id="theme-icon-light" style="display:none;" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        </button>
+        <button onclick="showView('request')" class="btn-primary" style="padding:6px 14px; font-size:12px;">+ New Shift</button>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <div id="view-dashboard" class="view-section" style="display:block;">
+        <div id="account-status-banner" style="display: none; padding: 16px; margin-bottom: 24px; border-radius: 8px; font-size: 13px; font-weight: 600; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);"></div>
+
+        <div class="grid grid-cols-4 gap-4 mb-8">
+          <div class="panel-card">
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Requested Shifts</div>
+            <div id="stat-pending" style="font-size:28px; font-weight:700; color:#fbbf24; font-family:'JetBrains Mono';">0</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Awaiting fulfillment</div>
+          </div>
+          <div class="panel-card">
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Active Deployments</div>
+            <div id="stat-active" style="font-size:28px; font-weight:700; color:#4ade80; font-family:'JetBrains Mono';">0</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Broadcasted / Ongoing</div>
+          </div>
+          <div class="panel-card">
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Fulfillment Rate</div>
+            <div style="font-size:28px; font-weight:700; color:var(--text-primary); font-family:'JetBrains Mono';">100%</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">System Guarantee</div>
+          </div>
+          <div class="panel-card">
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Unpaid Invoices</div>
+            <div id="stat-unpaid" style="font-size:28px; font-weight:700; color:#f87171; font-family:'JetBrains Mono';">0</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Due balance</div>
+          </div>
+        </div>
+
+        <div class="panel-card mb-8">
+          <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:16px;">Current Shift Order Progress <span style="font-size:11px; color:var(--text-muted); font-weight:400; margin-left:8px;">(Click to view & clear assigned workers)</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px;" id="fulfillment-container">
+            <span style="font-size:12px; color:var(--text-secondary);">Loading progress...</span>
+          </div>
+        </div>
+
+        <div class="panel-card data-table-wrapper">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary);">All Broadcasted Requests</div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Assignment</th>
+                <th>Role & Headcount</th>
+                <th>Site Location</th>
+                <th>Shift Time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="live-roster-body">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-secondary); font-size:12px;">Loading requests...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-request" class="view-section">
+        <div class="max-w-3xl mx-auto">
+          <div class="panel-card">
+            <h2 style="font-size:18px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">Request Shift Cover</h2>
+            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:24px;">Submit a new requirement. Our system will generate an order and begin matching compliant workers.</p>
+            
+            <form id="shift-request-form" onsubmit="submitShiftRequest(event)">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                  <label class="form-label">Role Required</label>
+                  <select required class="form-input" id="req-role">
+                    <option value="" disabled selected>-- Select Role --</option>
+                    <option value="Warehouse Operative / Picker">Warehouse Operative / Picker</option>
+                    <option value="FLT Counterbalance">FLT Counterbalance</option>
+                    <option value="FLT Reach">FLT Reach</option>
+                    <option value="Industrial Cleaner">Industrial Cleaner</option>
+                    <option value="Construction Labourer">Construction Labourer (CSCS)</option>
+                    <option value="Healthcare Assistant">Healthcare Assistant</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Headcount Needed</label>
+                  <input type="number" required min="1" max="50" class="form-input" id="req-count" placeholder="e.g. 5">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                  <label class="form-label">Start Date & Time</label>
+                  <input type="datetime-local" required class="form-input" id="req-start">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">End Date & Time</label>
+                  <input type="datetime-local" required class="form-input" id="req-end">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Deployment Site Address</label>
+                <input type="text" required class="form-input" id="req-address" placeholder="Physical location of the shift">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Specific Instructions / Notes</label>
+                <textarea rows="3" class="form-input" id="req-notes" placeholder="e.g. Report to Bay 4 upon arrival. Safety boots mandatory."></textarea>
+              </div>
+
+              <div style="display:flex; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:20px; margin-top:10px;">
+                <button type="submit" class="btn-primary" id="btn-submit-request">
+                  Broadcast Request to Admin
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-billing" class="view-section">
+        <div class="panel-card data-table-wrapper">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary);">Invoice History</div>
+            <div style="font-size:12px; color:var(--text-secondary);">Payments processed via BACS</div>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Invoice Ref</th><th>Issue Date</th><th>Total Amount</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="invoice-body"><tr><td colspan="5" style="text-align:center; color:var(--text-secondary); font-size:12px;">Loading invoices...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-documents" class="view-section">
+        <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:16px;">Compliance & Company Documents</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="docs-container">
+          <span style="font-size:12px; color:var(--text-secondary);">Loading documents...</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+function toggleTheme() {
+  const body = document.body;
+  const isLight = body.classList.toggle('light-theme');
+  document.getElementById('theme-icon-dark').style.display = isLight ? 'none' : 'block';
+  document.getElementById('theme-icon-light').style.display = isLight ? 'block' : 'none';
+  localStorage.setItem('client_theme', isLight ? 'light' : 'dark');
+}
+
+if (localStorage.getItem('client_theme') === 'light') {
+  document.body.classList.add('light-theme');
+  document.getElementById('theme-icon-dark').style.display = 'none';
+  document.getElementById('theme-icon-light').style.display = 'block';
+}
+
+const SUPABASE_URL = 'https://eftexnivgkchhrulryan.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_PTpRBa91vJXaLpV6Ku29bQ_tz33JHRD';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentCompanyId = null;
+let currentCompanyData = null;
+let allActiveAssignments = []; // Global cache for modal
+
+function showToast(type, msg) {
+  const container = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item`;
+  el.style.background = type === 'error' ? '#2d0d0d' : '#052e16';
+  el.style.borderColor = type === 'error' ? '#7f1d1d' : '#166534';
+  el.style.color = type === 'error' ? '#f87171' : '#4ade80';
+  el.textContent = `${type === 'error' ? '✗' : '✓'} ${msg}`;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+function showView(viewId) {
+  document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  
+  document.getElementById(`view-${viewId}`).style.display = 'block';
+  
+  const navItems = document.querySelectorAll('.nav-item');
+  if(viewId === 'dashboard') navItems[0].classList.add('active');
+  if(viewId === 'request') navItems[1].classList.add('active');
+  if(viewId === 'billing') navItems[2].classList.add('active');
+  if(viewId === 'documents') navItems[3].classList.add('active');
+
+  const titles = { 'dashboard': 'Active Deployment Monitor', 'request': 'Request Staff Cover', 'billing': 'Billing & Expenditure', 'documents': 'Compliance Management' };
+  document.getElementById('topbar-title').innerText = titles[viewId];
+  
+  if(window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+function toggleSidebar(e) {
+  if(e) e.stopPropagation();
+  const sidebar = document.getElementById('sidebar');
+  if(sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+    document.body.style.overflow = '';
+  } else {
+    sidebar.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+async function handleSignOut(e) {
+  e.preventDefault();
+  await sb.auth.signOut();
+  window.location.replace('login.html');
+}
+
+async function initDashboard() {
+  // ── Auth Guard ────────────────────────────────────────────
+  document.body.style.visibility = 'hidden';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.replace('login.html'); return; }
+
+    // Look up the company linked to this user's email
+    const userEmail = session.user.email;
+    const { data: companies, error } = await sb.from('companies')
+      .select('*')
+      .eq('corporate_email', userEmail)
+      .limit(1);
+
+    if (error || !companies || companies.length === 0) {
+      // Valid session but no company found — sign out and redirect
+      await sb.auth.signOut();
+      window.location.replace('login.html');
+      return;
+    }
+
+    document.body.style.visibility = 'visible';
+
+    currentCompanyData = companies[0];
+    currentCompanyId = currentCompanyData.id;
+
+    const compName = currentCompanyData.registered_company_name || 'Client Portal';
+    document.querySelectorAll('.company-name-display').forEach(el => el.innerText = compName);
+    const sidebarName = document.getElementById('sidebar-company-name');
+    if (sidebarName) sidebarName.textContent = compName;
+    document.getElementById('req-address').value = currentCompanyData.site_deployment_address || '';
+
+    updateStatusBanner();
+    await loadLiveRoster();
+    await loadInvoices();
+    await loadDocuments();
+
+  } catch (err) {
+    console.error("Error init:", err);
+    window.location.replace('login.html');
+  }
+}
+
+function updateStatusBanner() {
+  const banner = document.getElementById('account-status-banner');
+  if (!currentCompanyData) return;
+  const status = currentCompanyData.status;
+
+  if (status === 'APPROVED') {
+    banner.style.display = 'flex';
+    banner.style.background = 'var(--bg-panel)';
+    banner.style.borderLeft = '4px solid #4ade80';
+    banner.innerHTML = `<span style="color: #4ade80; margin-right: 8px;">✓</span> Your account is fully APPROVED. You can broadcast shifts to the network.`;
+  } else if (status === 'DECLINED') {
+    banner.style.display = 'flex';
+    banner.style.background = 'var(--bg-panel)';
+    banner.style.borderLeft = '4px solid #f87171';
+    banner.innerHTML = `<span style="color: #f87171; margin-right: 8px;">✗</span> Your account was DECLINED during KYC review. Please contact support.`;
+  } else {
+    banner.style.display = 'flex';
+    banner.style.background = 'var(--bg-panel)';
+    banner.style.borderLeft = '4px solid #fbbf24';
+    banner.innerHTML = `<span style="color: #fbbf24; margin-right: 8px;">ℹ</span> Your account is currently PENDING admin review. Requests will be saved as drafts until approved.`;
+  }
+}
+
+async function loadLiveRoster() {
+  const tbody = document.getElementById('live-roster-body');
+  const fulfillmentCont = document.getElementById('fulfillment-container');
+  if (!currentCompanyId) return;
+
+  const { data, error } = await sb.from('jobs')
+    .select(`
+      *,
+      job_assignments (
+        id, status, client_remarks, clock_in_photo, work_log_photo,
+        workers ( id, first_name, surname )
+      )
+    `)
+    .eq('company_id', currentCompanyId)
+    .order('created_at', {ascending: false});
+  
+  if(error || !data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary); font-size:12px;">No active shifts. Request staff to see them here.</td></tr>';
+    fulfillmentCont.innerHTML = '<span style="font-size:12px; color:var(--text-secondary);">No shift requests in progress.</span>';
+    document.getElementById('stat-pending').innerText = '0';
+    document.getElementById('stat-active').innerText = '0';
+    return;
+  }
+
+  let pendingCount = 0;
+  let activeCount = 0;
+
+  // Render Table
+  tbody.innerHTML = data.map(r => {
+    if(r.status === 'DRAFT' || r.status === 'PENDING') pendingCount++;
+    if(r.status === 'ACTIVE') activeCount++;
+    const isLive = r.status === 'ACTIVE';
+    return `
+    <tr>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:28px; height:28px; border-radius:5px; background:var(--input-bg); display:flex; align-items:center; justify-content:center; font-size:10px; color:#ea580c; font-weight:700;">REQ</div>
+          <span style="font-weight:600; color:var(--text-primary);">${r.role.split(' ')[0]} Request</span>
+        </div>
+      </td>
+      <td style="color:var(--text-secondary);">${r.role} (${r.headcount} workers)</td>
+      <td style="font-family:'JetBrains Mono'; font-size:11px; color:var(--text-primary);">${r.site_address}</td>
+      <td style="font-family:'JetBrains Mono'; font-size:11px; color:var(--text-primary);">${new Date(r.start_time).toLocaleString('en-GB', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'})}</td>
+      <td><span class="badge ${isLive ? 'badge-live' : 'badge-pending'}">${r.status || 'DRAFT'}</span></td>
+    </tr>
+  `}).join('');
+
+  document.getElementById('stat-pending').innerText = pendingCount;
+  document.getElementById('stat-active').innerText = activeCount;
+
+  // Render Fulfillment Bars
+  allActiveAssignments = data; // Cache for modal
+  const activeJobs = data.filter(j => j.status !== 'DRAFT'); // Only show progress for jobs broadcasted
+  
+  if (activeJobs.length === 0) {
+      fulfillmentCont.innerHTML = '<span style="font-size:12px; color:var(--text-secondary);">No broadcasted shifts in progress.</span>';
+  } else {
+      fulfillmentCont.innerHTML = activeJobs.map(r => {
+        const assignedCount = r.job_assignments ? r.job_assignments.length : 0;
+        let pct = (assignedCount / r.headcount) * 100;
+        if(pct > 100) pct = 100;
+        
+        let color = pct === 100 ? '#4ade80' : '#fbbf24';
+        let text = `${assignedCount} of ${r.headcount} Filled`;
+        if (r.status === 'PENDING') text = 'Awaiting Admin Broadcast';
+        
+        return `
+        <div class="clickable-progress" onclick="openJobDetailsModal('${r.id}')">
+          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+            <span style="font-weight:600; color:var(--text-primary);">${r.role} (${new Date(r.start_time).toLocaleDateString()})</span>
+            <span style="color:${color}; font-weight:700;">${text}</span>
+          </div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%; background:${color};"></div></div>
+        </div>
+        `;
+      }).join('');
+  }
+}
+
+// --- CLIENT CLEARANCE MODAL LOGIC ---
+function openJobDetailsModal(jobId) {
+  const job = allActiveAssignments.find(j => j.id === jobId);
+  if(!job) return;
+
+  document.getElementById('modal-shift-title').textContent = `${job.role} Roster`;
+  document.getElementById('modal-shift-sub').textContent = new Date(job.start_time).toLocaleString('en-GB', {weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+
+  const container = document.getElementById('modal-roster-list');
+  const assignments = job.job_assignments || [];
+
+  if (assignments.length === 0) {
+    container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-secondary); font-size:13px;">No workers have claimed this shift yet.</div>`;
+  } else {
+    container.innerHTML = assignments.map(a => {
+      const w = a.workers;
+      if(!w) return '';
+      const initials = `${w.first_name[0]}${w.surname[0]}`.toUpperCase();
+      
+      let actions = '';
+      let statusColor = '#94a3b8'; 
+      let statusText = a.status || 'ASSIGNED';
+
+      if (a.status === 'ASSIGNED') {
+          actions = `<span style="font-size:11px; color:var(--text-muted);">Awaiting Arrival & Selfie...</span>`;
+      } else if (a.status === 'ON_SITE') {
+          statusColor = '#fbbf24'; 
+          statusText = 'ON SITE / ARRIVED';
+          actions = `
+            <div style="display:flex; gap:8px;">
+                <button class="btn-outline" style="font-size:10px; padding:6px 12px;" onclick="viewShiftPhoto('${a.clock_in_photo}')">View Selfie</button>
+                <button class="btn-primary" style="font-size:10px; padding:6px 12px;" onclick="clientApproveArrival('${a.id}')">Acknowledge Arrival</button>
+            </div>`;
+      } else if (a.status === 'ARRIVAL_APPROVED') {
+          statusColor = '#3b82f6'; 
+          statusText = 'ARRIVAL VERIFIED';
+          actions = `<span style="font-size:11px; color:var(--text-muted);">Shift in progress. Awaiting Timesheet Log...</span>`;
+      } else if (a.status === 'PENDING_CLEARANCE') {
+          statusColor = '#f97316'; 
+          statusText = 'AWAITING CLEARANCE';
+          actions = `
+            <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+              <button class="btn-outline" style="font-size:10px; width:fit-content;" onclick="viewShiftPhoto('${a.work_log_photo}')">View Signed Timesheet</button>
+              <input type="text" id="remark-${a.id}" placeholder="Add a remark (Optional)..." style="background:var(--input-bg); border:1px solid var(--border-color); color:var(--text-primary); border-radius:4px; padding:8px; font-size:12px; outline:none; width:100%;">
+              <button class="btn-primary" style="font-size:11px; padding:8px; width:100%;" onclick="clientApproveCompletion('${a.id}')">Approve Hours & Clear Worker</button>
+            </div>
+          `;
+      } else if (a.status === 'CLEARED' || a.status === 'COMPLETED') {
+          statusColor = '#4ade80'; 
+          statusText = 'CLEARED';
+          actions = `<div style="font-size:11px; color:var(--text-muted); font-style:italic;">Remark: "${a.client_remarks || 'No remarks provided.'}"</div>`;
+      }
+
+      return `
+      <div style="padding:16px 24px; border-bottom:1px solid var(--border-color); display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; border-radius:8px; background:var(--input-bg); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--text-secondary);">${initials}</div>
+            <div>
+              <div style="font-weight:700; color:var(--text-primary); font-size:14px; display:flex; align-items:center; gap:6px;">
+                ${w.first_name} ${w.surname}
+                <svg width="14" height="14" fill="#4ade80" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              </div>
+              <div style="font-size:11px; color:var(--text-muted);">${job.role}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+             <span style="font-size:10px; font-weight:700; padding:3px 6px; border-radius:4px; border:1px solid ${statusColor}; color:${statusColor}; background:rgba(0,0,0,0.2); letter-spacing:0.05em;">${statusText}</span>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end;">
+          ${actions}
+        </div>
+      </div>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('roster-modal-overlay').classList.add('show');
+}
+
+async function viewShiftPhoto(path) {
+    if(!path || path === 'undefined') {
+        showToast('error', 'No photo was uploaded.');
+        return;
+    }
+    try {
+        const { data, error } = await sb.storage.from('documents-identity').createSignedUrl(path, 3600);
+        if(error) throw error;
+        window.open(data.signedUrl, '_blank');
+    } catch(e) {
+        showToast('error', 'Could not load photo: ' + e.message);
+    }
+}
+
+async function clientApproveArrival(assignmentId) {
+  try {
+    const { error } = await sb.from('job_assignments').update({ status: 'ARRIVAL_APPROVED' }).eq('id', assignmentId);
+    if(error) throw error;
+    showToast('success', 'Arrival acknowledged.');
+    await loadLiveRoster(); 
+    
+    const job = allActiveAssignments.find(j => j.job_assignments.some(a => a.id === assignmentId));
+    if(job) openJobDetailsModal(job.id);
+  } catch(e) {
+    showToast('error', 'Update failed: ' + e.message);
+  }
+}
+
+async function clientApproveCompletion(assignmentId) {
+  const remarkInput = document.getElementById(`remark-${assignmentId}`);
+  const remark = remarkInput ? remarkInput.value : '';
+
+  try {
+    const { error } = await sb.from('job_assignments').update({ 
+      status: 'CLEARED',
+      client_remarks: remark
+    }).eq('id', assignmentId);
+    
+    if(error) throw error;
+    showToast('success', 'Worker cleared for payroll processing.');
+    await loadLiveRoster();
+    
+    const job = allActiveAssignments.find(j => j.job_assignments.some(a => a.id === assignmentId));
+    if(job) openJobDetailsModal(job.id);
+  } catch(e) {
+    showToast('error', 'Update failed: ' + e.message);
+  }
+}
+
+function closeModal(modalId, e) {
+  if (e && e.target.id !== modalId) return;
+  document.getElementById(modalId).classList.remove('show');
+}
+
+// --- BILLING ---
+async function loadInvoices() {
+  const tbody = document.getElementById('invoice-body');
+  if (!currentCompanyId) return;
+
+  const { data, error } = await sb.from('invoices').select('*').eq('company_id', currentCompanyId).order('created_at', {ascending: false});
+  
+  if(error || !data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary); font-size:12px;">No invoices generated yet.</td></tr>';
+    document.getElementById('stat-unpaid').innerText = '0';
+    return;
+  }
+
+  let unpaidCount = 0;
+
+  tbody.innerHTML = data.map(i => {
+    if(i.status === 'UNPAID') unpaidCount++;
+    return `
+    <tr>
+      <td style="font-family:'JetBrains Mono'; font-weight:700; color:var(--text-primary);">${i.invoice_ref || 'N/A'}</td>
+      <td style="color:var(--text-secondary);">${i.issue_date ? new Date(i.issue_date).toLocaleDateString() : 'N/A'}</td>
+      <td style="font-weight:700; color:var(--text-primary);">${i.amount || 'N/A'}</td>
+      <td><span class="badge ${i.status === 'PAID' ? 'badge-draft' : 'badge-pending'}">${i.status}</span></td>
+      <td><button class="btn-outline" onclick="window.open('${i.file_url || '#'}', '_blank')">Download PDF</button></td>
+    </tr>
+  `}).join('');
+
+  document.getElementById('stat-unpaid').innerText = unpaidCount;
+}
+
+// --- DOCUMENTS ---
+async function loadDocuments() {
+  const container = document.getElementById('docs-container');
+  if (!currentCompanyData || !currentCompanyData.file_urls) {
+     container.innerHTML = '<span style="font-size:12px; color:var(--text-secondary);">No documents uploaded.</span>';
+     return;
+  }
+  
+  const fileUrls = currentCompanyData.file_urls;
+  const docKeys = Object.keys(fileUrls).filter(k => fileUrls[k]);
+  
+  if(docKeys.length === 0) {
+     container.innerHTML = '<span style="font-size:12px; color:var(--text-secondary);">No documents uploaded.</span>';
+     return;
+  }
+
+  let html = '';
+  for(const k of docKeys) {
+     const path = fileUrls[k];
+     const { data } = await sb.storage.from('documents-company').createSignedUrl(path, 3600);
+     const url = data?.signedUrl || '#';
+     const titleLabel = k.replace('file_', '').replace(/_/g, ' ');
+     
+     html += `
+     <div class="panel-card" style="display:flex; flex-direction:column;">
+        <div style="font-size:10px; font-weight:700; color:#ea580c; text-transform:uppercase; margin-bottom:4px;">Compliance</div>
+        <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:4px; text-transform:capitalize;">${titleLabel}</div>
+        <div style="font-size:11px; color:var(--text-secondary); margin-bottom:16px;">Uploaded during registration</div>
+        <button class="btn-outline" style="width:100%;" onclick="window.open('${url}', '_blank')">View Document</button>
+     </div>
+     `;
+  }
+  container.innerHTML = html;
+}
+
+// --- SHIFT REQUEST SUBMISSION ---
+async function submitShiftRequest(e) {
+  e.preventDefault();
+  
+  if (currentCompanyData && currentCompanyData.status === 'DECLINED') {
+      showToast('error', "Your account has been declined. You cannot submit new shift requests.");
+      return;
+  }
+
+  const btn = document.getElementById('btn-submit-request');
+  btn.disabled = true;
+  btn.innerHTML = 'Broadcasting...';
+
+  const requestStatus = (currentCompanyData && currentCompanyData.status === 'APPROVED') ? 'PENDING' : 'DRAFT';
+
+  const payload = {
+    company_id: currentCompanyId,
+    role: document.getElementById('req-role').value,
+    headcount: document.getElementById('req-count').value,
+    start_time: document.getElementById('req-start').value,
+    end_time: document.getElementById('req-end').value,
+    site_address: document.getElementById('req-address').value,
+    notes: document.getElementById('req-notes').value,
+    status: requestStatus
+  };
+
+  try {
+    const { error } = await sb.from('jobs').insert([payload]);
+    if (error) throw error;
+    
+    if (requestStatus === 'DRAFT') showToast('success', 'Saved as Draft. Awaiting account approval.');
+    else showToast('success', 'Shift Request Submitted Successfully!');
+
+    document.getElementById('shift-request-form').reset();
+    document.getElementById('req-address').value = currentCompanyData?.site_deployment_address || ''; 
+    
+    await loadLiveRoster();
+    showView('dashboard');
+
+  } catch (err) {
+    showToast('error', 'Failed to submit request: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `Broadcast Request to Admin <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>`;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", initDashboard);
+</script>
+</body>
+</html>

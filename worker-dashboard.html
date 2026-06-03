@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Worker Portal | WELLDONE GROUP</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Space Grotesk', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+      colors: {
+        brand: { 900: '#0B1120', 800: '#1e293b', 700: '#273548', 600: '#334155', 500: '#ea580c', 400: '#f97316', 50: '#f8fafc' }
+      }
+    }
+  }
+}
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  
+  :root {
+    --bg-main: #0B1120;
+    --bg-sidebar: #0d1526;
+    --bg-panel: #0f1a2e;
+    --bg-card: #0b1420;
+    --border-color: #1e293b;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+    --input-bg: #1e293b;
+    --hover-bg: #1a2540;
+    --active-bg: #1e2d45;
+  }
+
+  body.light-theme {
+    --bg-main: #f8fafc;
+    --bg-sidebar: #ffffff;
+    --bg-panel: #ffffff;
+    --bg-card: #f8fafc;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --input-bg: #f1f5f9;
+    --hover-bg: #f1f5f9;
+    --active-bg: #fff7ed;
+  }
+
+  body { font-family: 'Space Grotesk', sans-serif; background: var(--bg-main); color: var(--text-primary); overflow: hidden; height: 100vh; margin: 0; transition: background 0.3s, color 0.3s; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-sidebar); }
+  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+
+  #app-root { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 260px; min-width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100vh; z-index: 50; transition: transform 0.3s ease, background 0.3s, border-color 0.3s; }
+  .main-wrap { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .topbar { height: 56px; min-height: 56px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 24px; gap: 16px; transition: background 0.3s, border-color 0.3s; }
+  .content-area { flex: 1; display: flex; overflow: hidden; background: var(--bg-main); transition: background 0.3s; }
+  .view-section { display: none; flex: 1; overflow-y: auto; padding: 24px; width: 100%; height: 100%; }
+
+  .nav-item { display: flex; align-items: center; padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: all 0.15s; color: var(--text-secondary); font-size: 13px; font-weight: 500; margin: 2px 8px; }
+  .nav-item:hover { background: var(--hover-bg); color: var(--text-primary); }
+  .nav-item.active { background: var(--active-bg); color: #ea580c; border-left: 2px solid #ea580c; }
+
+  .panel-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; transition: background 0.3s, border-color 0.3s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+  .job-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; transition: all 0.2s; display: flex; flex-direction: column; gap: 12px; }
+  .job-card:hover { border-color: #ea580c; transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .form-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; transition: border 0.2s, background 0.3s, color 0.3s; }
+  .form-input:focus { border-color: #ea580c; }
+  .form-input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  input[type=file]::file-selector-button { margin-right: 12px; padding: 6px 12px; border-radius: 6px; background-color: var(--hover-bg); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+  input[type=file]::file-selector-button:hover { border-color: #ea580c; color: #ea580c; }
+
+  .btn-primary { background: linear-gradient(135deg, #ea580c, #f97316); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(234,88,12,0.25); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(234,88,12,0.4); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  
+  .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; display: inline-block; }
+  .btn-outline:hover { color: var(--text-primary); border-color: var(--text-primary); background: var(--hover-bg); }
+
+  .theme-toggle { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+  .theme-toggle:hover { border-color: #ea580c; color: #ea580c; }
+
+  .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; display: inline-block; }
+  .badge-live { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+  .badge-pending { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid #d97706; }
+  .badge-draft { background: var(--input-bg); color: var(--text-secondary); border: 1px solid var(--border-color); }
+  .badge-declined { background: #2d0d0d; color: #f87171; border: 1px solid #7f1d1d; }
+
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { text-align: left; padding: 12px 16px; font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color); }
+  .data-table td { padding: 16px; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); transition: background 0.2s; }
+  .data-table tr:hover td { background: var(--hover-bg); }
+
+  /* Modals */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(4px); padding: 20px; }
+  .modal-overlay.show { display: flex; align-items: center; justify-content: center; }
+  .modal-content { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+
+  /* Timeline UI */
+  .timeline-step { display: flex; gap: 16px; position: relative; padding-bottom: 24px; }
+  .timeline-step:last-child { padding-bottom: 0; }
+  .timeline-line { position: absolute; left: 11px; top: 24px; bottom: 0; width: 2px; background: var(--border-color); }
+  .timeline-step:last-child .timeline-line { display: none; }
+  .timeline-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; background: var(--input-bg); border: 2px solid var(--border-color); color: var(--text-muted); z-index: 1; }
+  .timeline-dot.active { background: #052e16; border-color: #4ade80; color: #4ade80; }
+  .timeline-content { flex: 1; padding-top: 2px; }
+  .timeline-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .timeline-desc { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+  .mobile-menu-btn { display: none; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); cursor: pointer; padding: 6px; align-items: center; justify-content: center; }
+  @media (max-width: 768px) {
+    body { overflow: auto !important; height: auto !important; }
+    #app-root { flex-direction: column; height: auto; }
+    .sidebar { position: fixed; transform: translateX(-100%); z-index: 200; box-shadow: 4px 0 24px rgba(0,0,0,0.5); }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; }
+    .sidebar-overlay.show { display: block; }
+    
+    .mobile-menu-btn { display: flex; }
+    .topbar { padding: 0 16px; justify-content: space-between; }
+    .content-area { overflow: visible; }
+    .view-section { padding: 16px !important; }
+    .grid-cols-3 { grid-template-columns: 1fr !important; }
+    .data-table-wrapper { overflow-x: auto; }
+  }
+  
+  #toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast-item { padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; background: #052e16; border: 1px solid #166534; color: #4ade80; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .avatar-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s; border-radius: 50%; }
+  .avatar-container:hover .avatar-overlay { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div id="schedule-modal-overlay" class="modal-overlay" onclick="closeModal('schedule-modal-overlay', event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div style="padding:20px 24px; border-bottom:1px solid var(--border-color); background:var(--bg-sidebar); display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h2 id="modal-log-title" style="font-size:16px; font-weight:700; color:var(--text-primary); margin:0 0 4px 0;">Shift Execution Log</h2>
+        <div id="modal-log-sub" style="font-size:12px; color:var(--text-muted); font-family:'JetBrains Mono';">Company Name</div>
+      </div>
+      <button onclick="closeModal('schedule-modal-overlay')" style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer;">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    
+    <div style="padding:24px; overflow-y:auto; background:var(--bg-main);">
+      <div id="timeline-container">
+        </div>
+    </div>
+
+    <div id="modal-log-actions" style="padding:16px 24px; border-top:1px solid var(--border-color); background:var(--bg-sidebar); display:flex; justify-content:flex-end;">
+      </div>
+  </div>
+</div>
+
+<div id="app-root">
+
+  <div class="sidebar" id="sidebar">
+    <div style="padding: 20px 16px 16px; border-bottom: 1px solid var(--border-color);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <img src="logo/logo.png" onerror="this.onerror=null; this.src='https://placehold.co/120x40/ea580c/ffffff?text=WELLDONE';" alt="WELLDONE" style="height: 26px; width: auto;">
+        <button class="mobile-menu-btn md:hidden" onclick="toggleSidebar()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div style="background: var(--input-bg); border-radius: 8px; padding: 10px 12px;">
+        <div style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px;">Worker Portal</div>
+        <div id="sidebar-worker-name" style="font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</div>
+        <div style="display:flex; align-items:center; gap:5px; margin-top:4px;">
+          <div style="width:6px; height:6px; border-radius:50%; background:#4ade80;"></div>
+          <span style="font-size:10px; color:var(--text-muted);">Active Session</span>
+        </div>
+      </div>
+    </div>
+
+    <nav style="flex:1; padding: 16px 0; overflow-y:auto;">
+      <div class="nav-item active" onclick="showView('dashboard')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" onclick="showView('job-board')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        Available Shifts
+      </div>
+      <div class="nav-item" onclick="showView('my-shifts')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        My Schedule
+      </div>
+      <div class="nav-item" onclick="showView('compliance')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        Compliance Docs
+      </div>
+      <div class="nav-item" onclick="showView('profile')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:12px;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        My Profile
+      </div>
+    </nav>
+
+    <div style="padding: 16px; border-top: 1px solid var(--border-color);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <div class="avatar-container" style="position:relative; width:36px; height:36px; border-radius:50%; background: var(--input-bg); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--text-secondary); flex-shrink:0; cursor:pointer;" onclick="document.getElementById('avatar-upload').click()" title="Upload Profile Picture">
+          <span id="sidebar-initials">--</span>
+          <img id="sidebar-avatar-img" src="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%; position:absolute; inset:0;">
+          <div class="avatar-overlay">
+            <svg width="14" height="14" fill="none" stroke="#ffffff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          </div>
+        </div>
+        <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
+
+        <div style="flex:1; min-width:0;">
+          <div id="sidebar-name" style="font-size:13px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Loading...</div>
+          <div id="sidebar-ni" style="font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono';">NI: ------</div>
+        </div>
+      </div>
+      <a href="#" onclick="handleSignOut(event)" style="display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; border-radius:8px; background:rgba(239, 68, 68, 0.1); color:#ef4444; font-size:12px; font-weight:700; text-decoration:none; transition:0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Sign Out
+      </a>
+    </div>
+  </div>
+
+  <div class="main-wrap">
+    
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      
+      <div style="flex:1;">
+        <div id="topbar-title" style="font-size:15px; font-weight:700; color:var(--text-primary); letter-spacing:0.03em;">Overview</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Your Personal Work Hub</div>
+      </div>
+      
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+          <svg id="theme-icon-dark" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <svg id="theme-icon-light" style="display:none;" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <div id="view-dashboard" class="view-section" style="display:block;">
+        <div id="account-status-banner" style="display: none; padding: 16px; margin-bottom: 24px; border-radius: 8px; font-size: 13px; font-weight: 600; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+          <div class="panel-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Upcoming Shift</div>
+              <div id="dash-upcoming-role" style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">No upcoming shifts</div>
+              <div id="dash-upcoming-time" style="font-size:12px; color:var(--text-secondary); font-family:'JetBrains Mono';">--</div>
+            </div>
+            <button onclick="showView('job-board')" class="btn-outline" style="margin-top:16px; width:100%;">Find Work</button>
+          </div>
+          <div class="panel-card">
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Shifts Claimed</div>
+            <div id="dash-shifts-claimed" style="font-size:28px; font-weight:700; color:#ea580c; font-family:'JetBrains Mono';">0</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Lifetime total</div>
+          </div>
+          <div class="panel-card">
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Estimated Earnings</div>
+            <div style="font-size:28px; font-weight:700; color:#4ade80; font-family:'JetBrains Mono';">£0.00</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">This week (pending payroll)</div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div style="font-size:14px; font-weight:700; color:var(--text-primary);">Broadcasted Shifts Near You</div>
+            <button onclick="showView('job-board')" style="background:transparent; border:none; color:#ea580c; font-size:12px; font-weight:600; cursor:pointer;">View All</button>
+          </div>
+          <div id="dashboard-recent-jobs" style="display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+      </div>
+
+      <div id="view-job-board" class="view-section">
+        <div style="max-width: 800px; margin: 0 auto;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px;">
+            <div>
+              <h2 style="font-size:18px; font-weight:700; color:var(--text-primary); margin:0 0 4px 0;">Available Shifts</h2>
+              <p style="font-size:12px; color:var(--text-muted); margin:0;">Claim open assignments broadcasted by admin.</p>
+            </div>
+            <button onclick="loadJobBoard()" class="btn-outline">Refresh</button>
+          </div>
+          <div id="jobs-container" style="display:flex; flex-direction:column; gap:16px;">
+            <div style="text-align:center; padding:40px; color:var(--text-muted); font-size:13px;">Loading shifts...</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-my-shifts" class="view-section">
+        <div class="panel-card data-table-wrapper" style="padding:0; overflow:hidden;">
+          <div style="padding:20px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:15px; font-weight:700; color:var(--text-primary);">My Schedule</div>
+            <button onclick="loadMyShifts()" class="btn-outline">Refresh</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>Date & Time</th><th>Role</th><th>Location</th><th>Status</th></tr></thead>
+              <tbody id="my-shifts-body">
+                <tr><td colspan="4" style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">Loading schedule...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-compliance" class="view-section">
+        <h2 style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:16px;">My Compliance Documents</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="docs-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+          <span style="font-size:13px; color:var(--text-muted);">Loading documents...</span>
+        </div>
+      </div>
+
+      <div id="view-profile" class="view-section">
+        <div style="max-width: 600px; margin: 0 auto;">
+          <div class="panel-card">
+            <h2 style="font-size:18px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">My Profile Settings</h2>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:24px;">Manage your contact details and basic information.</p>
+            
+            <form id="profile-form" onsubmit="updateProfile(event)">
+              <div style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:12px;">Core Identity (Locked)</div>
+                <div class="grid grid-cols-2 gap-4" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                  <div><label class="form-label">First Name</label><input type="text" id="prof-fname" class="form-input" disabled></div>
+                  <div><label class="form-label">Surname</label><input type="text" id="prof-sname" class="form-input" disabled></div>
+                  <div><label class="form-label">Date of Birth</label><input type="text" id="prof-dob" class="form-input" disabled></div>
+                  <div><label class="form-label">NI Number</label><input type="text" id="prof-ni" class="form-input" disabled></div>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 24px;">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:12px;">Contact Information</div>
+                <div class="form-group">
+                  <label class="form-label">Email Address</label>
+                  <input type="email" id="prof-email" required class="form-input">
+                </div>
+                <div class="form-group" style="display:grid; grid-template-columns: 80px 1fr; gap:8px;">
+                  <div>
+                    <label class="form-label">Code</label>
+                    <input type="text" id="prof-code" required class="form-input">
+                  </div>
+                  <div>
+                    <label class="form-label">Mobile Phone</label>
+                    <input type="tel" id="prof-phone" required class="form-input">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Current Address</label>
+                  <input type="text" id="prof-address" required class="form-input" placeholder="Street Address">
+                </div>
+                <div class="grid grid-cols-2 gap-4" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                  <div><label class="form-label">City</label><input type="text" id="prof-city" required class="form-input"></div>
+                  <div><label class="form-label">Postcode</label><input type="text" id="prof-postcode" required class="form-input"></div>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:flex-end;">
+                <button type="submit" id="btn-save-profile" class="btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+function toggleTheme() {
+  const body = document.body;
+  const isLight = body.classList.toggle('light-theme');
+  document.getElementById('theme-icon-dark').style.display = isLight ? 'none' : 'block';
+  document.getElementById('theme-icon-light').style.display = isLight ? 'block' : 'none';
+  localStorage.setItem('worker_theme', isLight ? 'light' : 'dark');
+}
+
+if (localStorage.getItem('worker_theme') === 'light') {
+  document.body.classList.add('light-theme');
+  document.getElementById('theme-icon-dark').style.display = 'none';
+  document.getElementById('theme-icon-light').style.display = 'block';
+}
+
+const SUPABASE_URL = 'https://eftexnivgkchhrulryan.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_PTpRBa91vJXaLpV6Ku29bQ_tz33JHRD';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentWorkerData = null;
+let allMyShifts = []; 
+
+function showToast(type, msg) {
+  const container = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item`;
+  el.style.background = type === 'error' ? '#2d0d0d' : '#052e16';
+  el.style.borderColor = type === 'error' ? '#7f1d1d' : '#166534';
+  el.style.color = type === 'error' ? '#f87171' : '#4ade80';
+  el.textContent = `${type === 'error' ? '✗' : '✓'} ${msg}`;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+function showView(viewId) {
+  document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  
+  document.getElementById(`view-${viewId}`).style.display = 'block';
+  
+  const navItems = document.querySelectorAll('.nav-item');
+  if(viewId === 'dashboard') { navItems[0].classList.add('active'); document.getElementById('topbar-title').innerText = 'Overview'; }
+  if(viewId === 'job-board') { navItems[1].classList.add('active'); document.getElementById('topbar-title').innerText = 'Available Shifts'; loadJobBoard(); }
+  if(viewId === 'my-shifts') { navItems[2].classList.add('active'); document.getElementById('topbar-title').innerText = 'My Schedule'; loadMyShifts(); }
+  if(viewId === 'compliance'){ navItems[3].classList.add('active'); document.getElementById('topbar-title').innerText = 'Compliance Docs'; loadDocuments(); }
+  if(viewId === 'profile')   { navItems[4].classList.add('active'); document.getElementById('topbar-title').innerText = 'My Profile'; }
+  
+  if(window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  } else {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+async function handleSignOut(e) {
+  e.preventDefault();
+  await sb.auth.signOut();
+  window.location.replace('login.html');
+}
+
+async function initDashboard() {
+  // ── Auth Guard ────────────────────────────────────────────
+  document.body.style.visibility = 'hidden';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.replace('login.html'); return; }
+
+    // Look up the worker record linked to this session email
+    const userEmail = session.user.email;
+    const { data: workers, error } = await sb.from('workers')
+      .select('*')
+      .eq('email', userEmail)
+      .limit(1);
+
+    if (error || !workers || workers.length === 0) {
+      await sb.auth.signOut();
+      window.location.replace('login.html');
+      return;
+    }
+
+    document.body.style.visibility = 'visible';
+    currentWorkerData = workers[0];
+
+    // Update the new sidebar worker block
+    const sidebarWorkerName = document.getElementById('sidebar-worker-name');
+    if (sidebarWorkerName) {
+      const fullName = `${currentWorkerData.first_name || ''} ${currentWorkerData.surname || ''}`.trim();
+      sidebarWorkerName.textContent = fullName || userEmail;
+    }
+
+    populateSidebarAndProfile();
+    updateStatusBanner();
+    loadDashboardJobs();
+    loadMyShifts();
+
+  } catch (err) {
+    console.error("Init Error:", err);
+    window.location.replace('login.html');
+  }
+}
+
+function populateSidebarAndProfile() {
+  const fName = currentWorkerData.first_name || 'Worker';
+  const lName = currentWorkerData.surname || '';
+  
+  document.getElementById('sidebar-name').innerText = `${fName} ${lName}`.trim();
+  document.getElementById('sidebar-initials').innerText = `${fName[0]||''}${lName[0]||''}`.toUpperCase();
+  document.getElementById('sidebar-ni').innerText = `NI: ${currentWorkerData.ni_number || 'N/A'}`;
+  
+  if(currentWorkerData.avatar_url) loadAvatarImage(currentWorkerData.avatar_url);
+
+  document.getElementById('prof-fname').value = currentWorkerData.first_name || '';
+  document.getElementById('prof-sname').value = currentWorkerData.surname || '';
+  document.getElementById('prof-dob').value = currentWorkerData.dob || '';
+  document.getElementById('prof-ni').value = currentWorkerData.ni_number || '';
+  
+  document.getElementById('prof-email').value = currentWorkerData.email || '';
+  document.getElementById('prof-code').value = currentWorkerData.country_code || '';
+  document.getElementById('prof-phone').value = currentWorkerData.mobile_phone || '';
+  document.getElementById('prof-address').value = currentWorkerData.address_line || '';
+  document.getElementById('prof-city').value = currentWorkerData.city || '';
+  document.getElementById('prof-postcode').value = currentWorkerData.postcode || '';
+}
+
+function updateStatusBanner() {
+  const banner = document.getElementById('account-status-banner');
+  if (!currentWorkerData) return;
+
+  const status = currentWorkerData.status;
+  banner.style.display = 'flex';
+  banner.style.background = 'var(--bg-panel)';
+
+  if (status === 'APPROVED') {
+    banner.style.borderLeft = '4px solid #4ade80';
+    banner.innerHTML = `<span style="color: #4ade80; margin-right: 8px;">✓</span> Your profile is APPROVED. You can now claim active shifts.`;
+  } else if (status === 'DECLINED') {
+    banner.style.borderLeft = '4px solid #f87171';
+    banner.innerHTML = `<span style="color: #f87171; margin-right: 8px;">✗</span> Your profile was DECLINED. Please check your compliance docs.`;
+  } else if (status === 'SUSPENDED') {
+    banner.style.borderLeft = '4px solid #f87171';
+    banner.innerHTML = `<span style="color: #f87171; margin-right: 8px;">⚠</span> Your account is SUSPENDED. Please contact admin.`;
+  } else {
+    banner.style.borderLeft = '4px solid #fbbf24';
+    banner.innerHTML = `<span style="color: #fbbf24; margin-right: 8px;">ℹ</span> Your profile is currently PENDING KYC review. You cannot claim shifts yet.`;
+  }
+}
+
+async function uploadAvatar(event) {
+    const file = event.target.files[0];
+    if (!file || !currentWorkerData) return;
+    if (file.size > 5 * 1024 * 1024) { showToast('error', 'Image exceeds 5MB limit.'); return; }
+    
+    document.getElementById('sidebar-initials').innerText = '...';
+    document.getElementById('sidebar-avatar-img').style.display = 'none';
+
+    try {
+        const ext = file.name.split('.').pop().toLowerCase();
+        const safeName = `${currentWorkerData.first_name}${currentWorkerData.surname}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const filePath = `avatars/avatar_${safeName}_${Date.now()}.${ext}`;
+
+        const { error: uploadError } = await sb.storage.from('documents-identity').upload(filePath, file, { upsert: false });
+        if(uploadError) throw uploadError;
+
+        const { error: dbError } = await sb.from('workers').update({ avatar_url: filePath }).eq('id', currentWorkerData.id);
+        if(dbError) throw dbError;
+
+        currentWorkerData.avatar_url = filePath;
+        showToast('success', 'Profile picture updated!');
+        loadAvatarImage(filePath);
+
+    } catch (e) {
+        showToast('error', 'Failed to upload image: ' + e.message);
+        document.getElementById('sidebar-initials').innerText = `${currentWorkerData.first_name[0]}${currentWorkerData.surname[0]}`.toUpperCase();
+    }
+}
+
+async function loadAvatarImage(path) {
+    const { data, error } = await sb.storage.from('documents-identity').createSignedUrl(path, 604800); 
+    if(data && data.signedUrl) {
+        document.getElementById('sidebar-initials').style.display = 'none';
+        document.getElementById('sidebar-avatar-img').src = data.signedUrl;
+        document.getElementById('sidebar-avatar-img').style.display = 'block';
+    }
+}
+
+async function updateProfile(e) {
+    e.preventDefault();
+    if(!currentWorkerData) return;
+    const btn = document.getElementById('btn-save-profile');
+    btn.disabled = true;
+    btn.innerText = 'Saving...';
+
+    const payload = {
+        email: document.getElementById('prof-email').value,
+        country_code: document.getElementById('prof-code').value,
+        mobile_phone: document.getElementById('prof-phone').value,
+        address_line: document.getElementById('prof-address').value,
+        city: document.getElementById('prof-city').value,
+        postcode: document.getElementById('prof-postcode').value,
+    };
+
+    try {
+        const { error } = await sb.from('workers').update(payload).eq('id', currentWorkerData.id);
+        if(error) throw error;
+        
+        currentWorkerData = { ...currentWorkerData, ...payload };
+        showToast('success', 'Profile updated successfully.');
+    } catch(e) {
+        showToast('error', 'Update failed: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Save Changes';
+    }
+}
+
+async function loadJobBoard() {
+  const container = document.getElementById('jobs-container');
+  container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted); font-size:13px;">Scanning network for shifts...</div>';
+  
+  if (!currentWorkerData) return;
+
+  try {
+    const { data: myAssigned } = await sb.from('job_assignments').select('job_id').eq('worker_id', currentWorkerData.id);
+    const claimedJobIds = myAssigned ? myAssigned.map(a => a.job_id) : [];
+
+    const { data, error } = await sb.from('jobs').select('*, companies(registered_company_name)').eq('status', 'ACTIVE').order('created_at', { ascending: false });
+    if (error) throw error;
+
+    const availableJobs = data.filter(job => !claimedJobIds.includes(job.id));
+
+    if (!availableJobs || availableJobs.length === 0) {
+      container.innerHTML = `
+        <div class="panel-card" style="text-align:center; padding:40px;">
+          <svg width="40" height="40" fill="none" stroke="var(--text-muted)" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 16px auto;"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <div style="font-weight:600; color:var(--text-primary); font-size:14px;">No shifts available</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Check back later or ensure your push notifications are enabled.</div>
+        </div>`;
+      return;
+    }
+
+    const isApproved = currentWorkerData && currentWorkerData.status === 'APPROVED';
+
+    container.innerHTML = availableJobs.map(job => {
+      const compName = job.companies?.registered_company_name || 'Verified Client';
+      const startStr = job.start_time ? new Date(job.start_time).toLocaleString('en-GB', {weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit'}) : 'TBA';
+      const endStr = job.end_time ? new Date(job.end_time).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : 'TBA';
+      
+      return `
+      <div class="job-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-size:10px; font-weight:700; color:#ea580c; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">${compName}</div>
+            <div style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">${job.role}</div>
+            <div style="font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span style="font-family:'JetBrains Mono';">${startStr} - ${endStr}</span>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px; font-weight:700; color:#4ade80; font-family:'JetBrains Mono';">TBD</div>
+            <div style="font-size:10px; color:var(--text-muted);">Hourly Rate</div>
+          </div>
+        </div>
+        
+        <div style="background:var(--bg-main); padding:12px; border-radius:8px; font-size:12px; color:var(--text-secondary); display:flex; gap:12px; align-items:flex-start;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:2px; color:var(--text-muted);"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div style="line-height:1.4;">${job.site_address || 'Location provided upon acceptance.'}</div>
+        </div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span style="font-size:11px; color:var(--text-muted);">${job.headcount} positions total</span>
+          <button onclick="acceptShift('${job.id}')" class="btn-primary" ${!isApproved ? 'disabled title="You must be approved to claim shifts"' : ''}>
+            ${isApproved ? 'Claim Shift' : 'Account Pending'}
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    container.innerHTML = `<div style="text-align:center; padding:40px; color:#f87171;">Error loading shifts: ${e.message}</div>`;
+  }
+}
+
+async function loadDashboardJobs() {
+  const container = document.getElementById('dashboard-recent-jobs');
+  try {
+    const { data: myAssigned } = await sb.from('job_assignments').select('job_id').eq('worker_id', currentWorkerData.id);
+    const claimedJobIds = myAssigned ? myAssigned.map(a => a.job_id) : [];
+
+    const { data, error } = await sb.from('jobs').select('*, companies(registered_company_name)').eq('status', 'ACTIVE').order('created_at', { ascending: false });
+    if (error) throw error;
+    
+    const availableJobs = data.filter(job => !claimedJobIds.includes(job.id)).slice(0,3);
+
+    if (!availableJobs || availableJobs.length === 0) {
+      container.innerHTML = '<span style="font-size:12px; color:var(--text-muted);">No active shifts available right now.</span>';
+      return;
+    }
+
+    container.innerHTML = availableJobs.map(job => {
+      const compName = job.companies?.registered_company_name || 'Client';
+      const timeStr = job.start_time ? new Date(job.start_time).toLocaleString('en-GB', {weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'TBA';
+      return `
+      <div style="padding:12px; border:1px solid var(--border-color); border-radius:8px; display:flex; justify-content:space-between; align-items:center; background:var(--bg-main);">
+        <div>
+          <div style="font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:2px;">${job.role}</div>
+          <div style="font-size:11px; color:var(--text-secondary); font-family:'JetBrains Mono';">${compName} • ${timeStr}</div>
+        </div>
+        <button onclick="showView('job-board')" class="btn-outline" style="font-size:10px; padding:4px 8px;">View</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = '<span style="font-size:12px; color:#f87171;">Error loading shifts.</span>';
+  }
+}
+
+async function acceptShift(jobId) {
+  if (!currentWorkerData) return;
+  try {
+    const { data: existing } = await sb.from('job_assignments').select('id').eq('job_id', jobId).eq('worker_id', currentWorkerData.id);
+      
+    if (existing && existing.length > 0) {
+      showToast('error', 'You have already claimed this shift.');
+      return;
+    }
+
+    const { error } = await sb.from('job_assignments').insert([{
+      job_id: jobId,
+      worker_id: currentWorkerData.id,
+      status: 'ASSIGNED'
+    }]);
+    
+    if (error) throw error;
+    
+    showToast('success', 'Shift claimed successfully! Added to your schedule.');
+    
+    loadMyShifts();
+    loadJobBoard();
+    loadDashboardJobs();
+  } catch (e) {
+    showToast('error', 'Failed to claim shift: ' + e.message);
+  }
+}
+
+// --- SCHEDULE & LOG MODAL ---
+async function loadMyShifts() {
+  const tbody = document.getElementById('my-shifts-body');
+  if (!currentWorkerData) return;
+
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">Loading schedule...</td></tr>';
+
+  try {
+    const { data, error } = await sb.from('job_assignments')
+      .select(`id, status, jobs ( id, role, start_time, end_time, site_address, companies ( registered_company_name ) )`)
+      .eq('worker_id', currentWorkerData.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    allMyShifts = data || [];
+
+    document.getElementById('dash-shifts-claimed').textContent = data ? data.length : 0;
+    
+    if (data && data.length > 0) {
+       const firstUpcoming = data[0].jobs;
+       document.getElementById('dash-upcoming-role').textContent = firstUpcoming.role;
+       document.getElementById('dash-upcoming-time').textContent = firstUpcoming.start_time ? new Date(firstUpcoming.start_time).toLocaleString('en-GB', {weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'TBA';
+    }
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); font-size:13px; padding:30px;">You have no assigned shifts currently.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.map(assignment => {
+      const job = assignment.jobs;
+      if (!job) return '';
+      
+      const compName = job.companies?.registered_company_name || 'Verified Client';
+      const dateStr = job.start_time ? new Date(job.start_time).toLocaleString('en-GB', {weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : 'TBA';
+      const isCompleted = assignment.status === 'COMPLETED';
+
+      return `
+      <tr style="cursor:pointer;" onclick="openShiftModal('${assignment.id}')">
+        <td style="font-family:'JetBrains Mono'; font-size:12px; color:var(--text-primary);">${dateStr}</td>
+        <td>
+          <div style="font-weight:600; color:var(--text-primary); font-size:13px;">${job.role}</div>
+          <div style="font-size:11px; color:var(--text-muted);">${compName}</div>
+        </td>
+        <td style="font-family:'JetBrains Mono'; font-size:11px; color:var(--text-primary);">${job.site_address || '—'}</td>
+        <td><span class="badge ${isCompleted ? 'badge-draft' : 'badge-live'}">${assignment.status || 'ASSIGNED'}</span></td>
+      </tr>`;
+    }).join('');
+
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#f87171; padding:30px;">Error loading schedule: ${e.message}</td></tr>`;
+  }
+}
+
+function openShiftModal(assignmentId) {
+  const assignment = allMyShifts.find(a => a.id === assignmentId);
+  if(!assignment) return;
+  const job = assignment.jobs;
+  const status = assignment.status || 'ASSIGNED';
+
+  document.getElementById('modal-log-title').innerText = job.role;
+  document.getElementById('modal-log-sub').innerText = job.companies?.registered_company_name || 'Client Site';
+
+  let step = 1;
+  if(status === 'ON_SITE') step = 2;
+  if(status === 'ARRIVAL_APPROVED') step = 3;
+  if(status === 'PENDING_CLEARANCE') step = 4;
+  if(status === 'CLEARED' || status === 'COMPLETED') step = 5;
+
+  let stepsHtml = `
+    <div class="timeline-step">
+      <div class="timeline-line"></div>
+      <div class="timeline-dot ${step >= 1 ? 'active' : ''}">1</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Shift Assigned</div>
+        <div class="timeline-desc">Confirmed to arrive at: <span style="color:var(--text-primary);">${job.site_address}</span></div>
+      </div>
+    </div>
+    
+    <div class="timeline-step">
+      <div class="timeline-line"></div>
+      <div class="timeline-dot ${step >= 2 ? 'active' : ''}">2</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Clock In / On Site</div>
+        <div class="timeline-desc">Upload a selfie to verify your arrival on site.</div>
+        ${status === 'ASSIGNED' ? `
+          <div style="margin-top:12px;">
+            <input type="file" id="upload-clock-in" accept="image/*" capture="user" class="form-input" style="padding: 8px;">
+          </div>
+        ` : ''}
+      </div>
+    </div>
+    
+    <div class="timeline-step">
+      <div class="timeline-line"></div>
+      <div class="timeline-dot ${step >= 3 ? 'active' : ''}">3</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Manager Clearance Request</div>
+        <div class="timeline-desc">Upload a photo of the physical work log signed by the site manager.</div>
+        ${status === 'ARRIVAL_APPROVED' ? `
+          <div style="margin-top:12px;">
+            <input type="file" id="upload-work-log" accept="image/*" capture="environment" class="form-input" style="padding: 8px;">
+          </div>
+        ` : ''}
+      </div>
+    </div>
+    
+    <div class="timeline-step">
+      <div class="timeline-line"></div>
+      <div class="timeline-dot ${step >= 4 ? 'active' : ''}">4</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Awaiting Client Approval</div>
+        <div class="timeline-desc">${step === 4 ? 'The client is verifying your logged hours.' : 'Hours verified.'}</div>
+      </div>
+    </div>
+    
+    <div class="timeline-step">
+      <div class="timeline-dot ${step >= 5 ? 'active' : ''}">5</div>
+      <div class="timeline-content">
+        <div class="timeline-title">Closed & Cleared</div>
+        <div class="timeline-desc">Shift completed. Hours submitted for payroll processing.</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('timeline-container').innerHTML = stepsHtml;
+
+  const actionsCont = document.getElementById('modal-log-actions');
+  
+  if(status === 'ASSIGNED') {
+      actionsCont.innerHTML = `<button class="btn-primary" onclick="uploadAndAdvance('${assignment.id}', 'upload-clock-in', 'ON_SITE', 'clock_in_photo')">Upload Selfie & Clock In</button>`;
+  } else if(status === 'ON_SITE') {
+      actionsCont.innerHTML = `<button class="btn-outline" disabled>Awaiting Client to Verify Arrival...</button>`;
+  } else if(status === 'ARRIVAL_APPROVED') {
+      actionsCont.innerHTML = `<button class="btn-primary" onclick="uploadAndAdvance('${assignment.id}', 'upload-work-log', 'PENDING_CLEARANCE', 'work_log_photo')">Upload Timesheet & Request Clearance</button>`;
+  } else if(status === 'PENDING_CLEARANCE') {
+      actionsCont.innerHTML = `<button class="btn-outline" disabled>Awaiting Client Timesheet Approval...</button>`;
+  } else if(status === 'CLEARED') {
+      actionsCont.innerHTML = `<button class="btn-primary" onclick="advanceShiftStatus('${assignment.id}', 'COMPLETED')">Finalize & Close Shift</button>`;
+  } else {
+      actionsCont.innerHTML = `<button class="btn-outline" disabled>Shift Completed</button>`;
+  }
+
+  document.getElementById('schedule-modal-overlay').classList.add('show');
+}
+
+async function uploadAndAdvance(assignmentId, inputId, newStatus, dbColumn) {
+  const input = document.getElementById(inputId);
+  const btn = document.querySelector('#modal-log-actions button');
+  
+  if (!input || !input.files || input.files.length === 0) {
+    showToast('error', 'Please select or take a photo first.');
+    return;
+  }
+  
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('error', 'File is too large (max 5MB).');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = 'Uploading...';
+
+  try {
+    const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+    const safeName = `${currentWorkerData.first_name}${currentWorkerData.surname}`.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const filePath = `shift-logs/${dbColumn}_${safeName}_${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await sb.storage.from('documents-identity').upload(filePath, file, { upsert: false });
+    if(uploadError) throw uploadError;
+
+    const payload = { status: newStatus };
+    payload[dbColumn] = filePath;
+
+    const { error: dbError } = await sb.from('job_assignments').update(payload).eq('id', assignmentId);
+    if(dbError) throw dbError;
+
+    showToast('success', 'File uploaded and status updated.');
+    
+    const assignment = allMyShifts.find(a => a.id === assignmentId);
+    if(assignment) assignment.status = newStatus;
+    
+    openShiftModal(assignmentId);
+    loadMyShifts();
+
+  } catch (err) {
+    showToast('error', 'Failed to upload: ' + err.message);
+    btn.disabled = false;
+    btn.innerText = 'Try Again';
+  }
+}
+
+async function advanceShiftStatus(assignmentId, newStatus) {
+  try {
+    const { error } = await sb.from('job_assignments').update({ status: newStatus }).eq('id', assignmentId);
+    if(error) throw error;
+    showToast('success', 'Shift log updated.');
+    
+    const assignment = allMyShifts.find(a => a.id === assignmentId);
+    if(assignment) assignment.status = newStatus;
+    
+    openShiftModal(assignmentId);
+    loadMyShifts();
+  } catch(e) {
+    showToast('error', 'Error updating shift: ' + e.message);
+  }
+}
+
+function closeModal(modalId, e) {
+  if (e && e.target.id !== modalId) return;
+  document.getElementById(modalId).classList.remove('show');
+}
+
+const DOC_LABELS = {
+  file_passport: 'Passport', file_brp: 'BRP Card', file_visa: 'Visa',
+  file_forklift_licence: 'FLT Licence', file_cscs_card: 'CSCS Card',
+  file_dbs_certificate: 'DBS Cert', file_care_dbs: 'Care DBS',
+  file_proof_of_address: 'Proof of Address', file_bank_statement: 'Bank Statement',
+  file_ni_document: 'NI Document', file_right_to_work: 'Right to Work'
+};
+
+async function loadDocuments() {
+  const container = document.getElementById('docs-container');
+  if (!currentWorkerData || !currentWorkerData.file_urls) {
+     container.innerHTML = '<span style="font-size:13px; color:var(--text-muted);">No compliance documents uploaded.</span>';
+     return;
+  }
+  
+  let fileUrls = currentWorkerData.file_urls;
+  if (typeof fileUrls === 'string') { try { fileUrls = JSON.parse(fileUrls); } catch(e) { fileUrls = {}; } }
+  
+  const docKeys = Object.keys(fileUrls).filter(k => fileUrls[k]);
+  
+  if(docKeys.length === 0) {
+     container.innerHTML = '<span style="font-size:13px; color:var(--text-muted);">No compliance documents uploaded.</span>';
+     return;
+  }
+
+  let html = '';
+  for(const k of docKeys) {
+     const path = fileUrls[k];
+     const { data } = await sb.storage.from('documents-identity').createSignedUrl(path, 3600);
+     const url = data?.signedUrl || '#';
+     const titleLabel = DOC_LABELS[k] || k.replace('file_', '').replace(/_/g, ' ');
+     
+     html += `
+     <div class="panel-card" style="display:flex; flex-direction:column; padding:16px;">
+        <div style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Uploaded</div>
+        <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:12px; text-transform:capitalize;">${titleLabel}</div>
+        <button onclick="window.open('${url}', '_blank')" class="btn-outline" style="margin-top:auto; width:100%;">
+          View Secure Copy
+        </button>
+     </div>
+     `;
+  }
+  container.innerHTML = html;
+}
+
+document.addEventListener("DOMContentLoaded", initDashboard);
+</script>
+</body>
+</html>

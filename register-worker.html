@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Apply-Worker | WELLDONE GROUP</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            950: '#060b14',
+                            900: '#0B1120',
+                            800: '#111827',
+                            700: '#1e293b',
+                            500: '#ea580c',
+                            400: '#fb923c',
+                            50:  '#fff7ed',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Inter', 'sans-serif'],
+                        mono: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'glass':  '0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.08)',
+                        'glow':   '0 0 24px rgba(234,88,12,0.35)',
+                        'lift':   '0 20px 60px -15px rgba(0,0,0,0.18)',
+                        'input':  '0 2px 8px -2px rgba(0,0,0,0.06)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --brand-500: #ea580c;
+            --brand-400: #fb923c;
+            --surface: #ffffff;
+            --surface-raised: #fafafa;
+            --border: #e5e7eb;
+            --border-focus: #ea580c;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f1f5f9;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(234,88,12,0.06) 0%, transparent 100%),
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23cbd5e1' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            min-height: 100vh;
+        }
+
+        /* ── Typography ── */
+        .font-display { font-family: 'Inter', sans-serif; font-weight: 800; }
+        .font-mono    { font-family: 'Inter', sans-serif; }
+
+        /* ── Navigation ── */
+        #mainHeaderBlock {
+            background: rgba(6, 11, 20, 0.7);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        #mainHeaderBlock.scrolled {
+            background: rgba(6, 11, 20, 0.95);
+            border-bottom-color: rgba(234,88,12,0.2);
+        }
+
+        /* ── Section Step Indicator ── */
+        .section-step {
+            width: 2rem; height: 2rem;
+            background: linear-gradient(135deg, #0B1120 0%, #1e293b 100%);
+            border: 1px solid rgba(234,88,12,0.3);
+            color: #fb923c;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            flex-shrink: 0;
+            box-shadow: 0 0 12px rgba(234,88,12,0.15);
+        }
+
+        /* ── Form Inputs ── */
+        .field-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            color: #0f172a;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+            outline: none;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            -webkit-appearance: none;
+        }
+        .field-input::placeholder { color: #94a3b8; }
+        .field-input:focus {
+            border-color: var(--brand-500);
+            box-shadow: 0 0 0 3px rgba(234,88,12,0.1), 0 1px 4px rgba(0,0,0,0.04);
+            background: #fffaf7;
+        }
+        .field-input:hover:not(:focus) { border-color: #cbd5e1; }
+
+        select.field-input { cursor: pointer; }
+        textarea.field-input { resize: vertical; min-height: 80px; }
+
+        /* ── Labels ── */
+        .field-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #374151;
+            letter-spacing: 0.01em;
+            margin-bottom: 0.375rem;
+        }
+        .field-hint {
+            font-size: 0.73rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+            line-height: 1.4;
+        }
+
+        /* ── Section Card ── */
+        .section-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        .section-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #f1f5f9;
+            background: linear-gradient(to right, #fafafa, white);
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+        }
+        .section-body { padding: 1.75rem 2rem; }
+        @media(max-width: 640px) {
+            .section-header { padding: 1.25rem 1.25rem; }
+            .section-body { padding: 1.25rem 1.25rem; }
+        }
+
+        /* ── Niche Card ── */
+        .niche-card {
+            background: white;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 14px;
+            overflow: hidden;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .niche-card:has(input[type=checkbox]:checked) {
+            border-color: rgba(234,88,12,0.4);
+            box-shadow: 0 0 0 3px rgba(234,88,12,0.07);
+        }
+        .niche-header {
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid transparent;
+        }
+        .niche-card:has(input[type=checkbox]:checked) .niche-header {
+            background: #fff7ed;
+            border-bottom-color: #fed7aa;
+        }
+
+        /* ── Custom Radio/Checkbox ── */
+        .choice-card {
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem 1.125rem;
+            cursor: pointer;
+            transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            background: #fafafa;
+        }
+        .choice-card:hover { border-color: #cbd5e1; background: white; }
+        .choice-card:has(input:checked) {
+            border-color: var(--brand-500);
+            background: #fff7ed;
+            box-shadow: 0 0 0 3px rgba(234,88,12,0.08);
+        }
+        .choice-card input[type=radio], .choice-card input[type=checkbox] {
+            accent-color: var(--brand-500);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        /* ── Custom File Input ── */
+        .file-zone {
+            position: relative;
+            border: 1.5px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 1.25rem 1rem;
+            background: #fafafa;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            overflow: hidden;
+        }
+        .file-zone:hover { border-color: var(--brand-500); background: #fff7ed; }
+        .file-zone input[type=file] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .file-zone.has-file { border-color: #22c55e; background: #f0fdf4; border-style: solid; }
+
+        /* ── WhatsApp Toggle ── */
+        .wa-card {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border: 1.5px solid #bbf7d0;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            display: flex; align-items: flex-start; gap: 0.875rem;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+        .wa-card:hover { box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+
+        /* ── Subfield Block ── */
+        .sub-block {
+            margin-left: 1.5rem;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(234,88,12,0.25);
+            margin-top: 0.75rem;
+            padding-top: 0.5rem;
+            display: flex; flex-direction: column; gap: 0.625rem;
+        }
+
+        /* ── Info Alert ── */
+        .info-alert {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            font-size: 0.84rem;
+            color: #1e3a5f;
+        }
+        .warning-alert {
+            background: #fefce8;
+            border: 1px solid #fde047;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            font-size: 0.84rem;
+            color: #713f12;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* ── Progress Bar ── */
+        #formProgress {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: linear-gradient(90deg, #ea580c, #fb923c);
+            transition: width 0.4s cubic-bezier(.4,0,.2,1);
+            z-index: 9999;
+            box-shadow: 0 0 8px rgba(234,88,12,0.5);
+        }
+
+        /* ── Submit Button ── */
+        .btn-submit {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #0B1120 0%, #1e293b 100%);
+            color: white;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.04em;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 0.625rem;
+            box-shadow: 0 8px 24px -6px rgba(11,17,32,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-submit::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(234,88,12,0.12), rgba(234,88,12,0));
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -6px rgba(11,17,32,0.5); }
+        .btn-submit:hover::after { opacity: 1; }
+        .btn-submit:active { transform: translateY(0); }
+
+        /* ── Section Divider ── */
+        .section-divider { height: 1px; background: linear-gradient(to right, transparent, #e5e7eb, transparent); margin: 0; }
+
+        /* ── Accent Tag ── */
+        .tag-optional {
+            font-size: 0.7rem; font-weight: 500; color: #94a3b8;
+            background: #f1f5f9; border-radius: 4px; padding: 1px 6px;
+            letter-spacing: 0.02em; text-transform: uppercase; vertical-align: middle;
+        }
+
+        /* ── Modal ── */
+        #submissionModal {
+            background: rgba(6,11,20,0.85);
+            backdrop-filter: blur(12px);
+        }
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 40px 100px -20px rgba(0,0,0,0.4);
+            padding: 2.5rem;
+            width: 100%; max-width: 420px;
+            text-align: center;
+        }
+
+        /* Spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 3px solid #f1f5f9;
+            border-top-color: var(--brand-500);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1.25rem;
+        }
+
+        /* Stagger animation */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+            animation: fadeUp 0.5s ease forwards;
+            opacity: 0;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+        /* date picker indicator */
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+<!-- Progress Bar -->
+<div id="formProgress" style="width:0%"></div>
+
+<!-- ═══════════════════════════════════════
+     NAVIGATION
+════════════════════════════════════════ -->
+<div id="navigationWrapper" class="fixed top-0 inset-x-0 z-50">
+    <header id="mainHeaderBlock" class="w-full transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 sm:h-20 w-full">
+
+                <!-- Logo -->
+                <div class="flex items-center z-20">
+                    <a href="index.html" class="hover:opacity-80 transition-opacity flex items-center">
+                        <img src="logo/logo.png" onerror="this.onerror=null;this.src='https://placehold.co/120x40/ea580c/ffffff?text=LOGO';" alt="WELLDONE" class="h-8 sm:h-10 w-auto">
+                    </a>
+                </div>
+
+                <!-- Center Brand -->
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 whitespace-nowrap">
+                    <a href="index.html" class="font-display font-extrabold text-[15px] sm:text-lg md:text-xl tracking-tight uppercase hover:opacity-80 transition-opacity">
+                        <span class="text-white">WELLDONE</span> <span class="text-brand-500">GROUP</span>
+                    </a>
+                </div>
+
+                <!-- Right Nav -->
+                <div class="flex items-center justify-end z-20 gap-3">
+                    <div class="hidden lg:flex space-x-6 text-sm font-semibold text-slate-300 items-center mr-2">
+                        <a href="index.html" class="hover:text-white transition-colors">Home</a>
+                        <a href="register-client.html" class="px-4 py-2 bg-brand-500 hover:bg-orange-600 text-white font-bold rounded-lg transition-all shadow-glow text-sm">Request Staff</a>
+                    </div>
+                    <a href="login.html" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-white/10 border border-white/15 rounded-lg hover:bg-brand-500 hover:border-brand-500 transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                        Portal Login
+                    </a>
+                    <button id="mobile-menu-button" class="lg:hidden text-slate-300 hover:text-white focus:outline-none">
+                        <svg id="icon-menu"  class="w-6 h-6 block"  fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        <svg id="icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div id="mobile-menu" class="hidden lg:hidden w-full bg-brand-950 border-b border-slate-800 shadow-2xl">
+        <div class="px-4 pt-2 pb-6 space-y-1">
+            <a href="index.html" class="block px-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Home</a>
+            <a href="register-client.html" class="block px-4 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Request Staff</a>
+            <a href="login.html" class="block px-4 py-3 rounded-xl text-sm font-bold text-white bg-brand-500 hover:bg-orange-600 transition-colors mt-3 text-center">Portal Login</a>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════ -->
+<main class="flex-grow pt-24 sm:pt-28 pb-16 px-4 sm:px-6">
+    <div class="max-w-3xl mx-auto">
+
+        <!-- Page Header -->
+        <div class="mb-8 animate-in">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-500/10 border border-brand-500/20 rounded-full text-brand-500 text-xs font-semibold font-mono tracking-wider uppercase">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse inline-block"></span>
+                    Secure Application
+                </span>
+            </div>
+            <h1 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-2">Worker Onboarding</h1>
+            <p class="text-slate-500 text-base">Complete your profile to access live shifts across the network. All fields marked <span class="text-brand-500 font-semibold">*</span> are required.</p>
+        </div>
+
+        <!-- Form -->
+        <form id="registrationForm" action="#" method="POST" class="space-y-5 animate-in delay-1">
+
+            <!-- ──────────────────────────────────── -->
+            <!-- SECTION 1: Personal Identity        -->
+            <!-- ──────────────────────────────────── -->
+            <div class="section-card shadow-lift">
+                <div class="section-header">
+                    <div class="section-step">01</div>
+                    <div>
+                        <h2 class="font-display font-bold text-slate-900 text-base leading-tight">Core Personal Identity</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Biodata — as shown on your official ID documents</p>
+                    </div>
+                </div>
+                <div class="section-body space-y-5">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">First Name <span class="text-brand-500">*</span></label>
+                            <input type="text" name="firstName" required placeholder="As it appears on ID" class="field-input">
+                        </div>
+                        <div>
+                            <label class="field-label">Surname <span class="text-brand-500">*</span></label>
+                            <input type="text" name="lastName" required placeholder="Family / last name" class="field-input">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">Date of Birth <span class="text-brand-500">*</span></label>
+                            <input type="date" name="dob" required onclick="this.showPicker && this.showPicker()" class="field-input">
+                            <p class="field-hint">Required for regulatory age limits & RTW tracking.</p>
+                        </div>
+                        <div>
+                            <label class="field-label">National Insurance Number <span class="text-brand-500">*</span></label>
+                            <input type="text" name="ni_number" required placeholder="QQ 12 34 56 A" class="field-input font-mono uppercase" style="letter-spacing:0.08em;">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">Gender <span class="text-brand-500">*</span></label>
+                            <select name="gender" required class="field-input">
+                                <option value="" disabled selected>— Select —</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Non-binary">Non-binary</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">Ethnicity <span class="tag-optional">Optional</span></label>
+                            <select name="ethnicity" class="field-input">
+                                <option value="">Prefer not to say</option>
+                                <option value="White British">White — British</option>
+                                <option value="White Irish">White — Irish</option>
+                                <option value="White Other">White — Any other White background</option>
+                                <option value="Mixed White Black Caribbean">Mixed — White &amp; Black Caribbean</option>
+                                <option value="Mixed White Black African">Mixed — White &amp; Black African</option>
+                                <option value="Mixed White Asian">Mixed — White &amp; Asian</option>
+                                <option value="Mixed Other">Mixed — Any other Mixed background</option>
+                                <option value="Asian British">Asian or Asian British — Indian</option>
+                                <option value="Asian Pakistani">Asian or Asian British — Pakistani</option>
+                                <option value="Asian Bangladeshi">Asian or Asian British — Bangladeshi</option>
+                                <option value="Asian Other">Asian — Any other Asian background</option>
+                                <option value="Black African">Black or Black British — African</option>
+                                <option value="Black Caribbean">Black or Black British — Caribbean</option>
+                                <option value="Black Other">Black — Any other Black background</option>
+                                <option value="Other">Any other ethnic group</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <div>
+                        <label class="field-label">Residential Address <span class="text-brand-500">*</span></label>
+                        <input type="text" name="address_line" required placeholder="Street address, apartment or building name" class="field-input mb-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="field-label">City <span class="text-brand-500">*</span></label>
+                                <input type="text" name="city" required class="field-input">
+                            </div>
+                            <div>
+                                <label class="field-label">Postcode <span class="text-brand-500">*</span></label>
+                                <input type="text" name="postcode" required placeholder="SR1 1AA" class="field-input uppercase font-mono" style="letter-spacing:0.06em;">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ──────────────────────────────────── -->
+            <!-- SECTION 2: Contact & Communication  -->
+            <!-- ──────────────────────────────────── -->
+            <div class="section-card shadow-lift">
+                <div class="section-header">
+                    <div class="section-step">02</div>
+                    <div>
+                        <h2 class="font-display font-bold text-slate-900 text-base leading-tight">Contact & Communication</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">How we reach you — phone, email, and emergency contact</p>
+                    </div>
+                </div>
+                <div class="section-body space-y-5">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">Mobile Number <span class="text-brand-500">*</span></label>
+                            <div class="flex gap-2">
+                                <select name="countryCode" id="countryCodeSelect" required class="field-input" style="width:38%; flex-shrink:0;">
+                                    <option value="" disabled selected>Select country</option>
+                                </select>
+                                <input type="tel" name="mobile_phone" required placeholder="7000 000000" class="field-input" style="flex:1;">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="field-label">Personal Email <span class="text-brand-500">*</span></label>
+                            <input type="email" name="email" required placeholder="name@example.com" class="field-input">
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Agreement -->
+                    <label class="wa-card">
+                        <input type="checkbox" name="whatsapp_agreement" value="Yes" class="mt-0.5 w-5 h-5 flex-shrink-0" style="accent-color:#22c55e;">
+                        <div>
+                            <div class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                                <svg viewBox="0 0 24 24" class="w-4 h-4 fill-green-500 flex-shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.17.578 4.2 1.584 5.955L0 24l6.194-1.557A11.96 11.96 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.9 0-3.69-.505-5.24-1.387l-.375-.223-3.681.924.952-3.607-.244-.389A9.959 9.959 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                                WhatsApp Dispatch Agreement
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5">Receive shift broadcasts, deployment updates, and operational notifications via WhatsApp.</p>
+                        </div>
+                    </label>
+
+                    <div class="section-divider"></div>
+
+                    <!-- Emergency Contact -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <h3 class="text-sm font-bold text-slate-800">Emergency Contact <span class="text-red-500 text-xs">(Required)</span></h3>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="field-label">Full Name <span class="text-brand-500">*</span></label>
+                                <input type="text" name="emergency_contact_name" required placeholder="Jane Smith" class="field-input">
+                            </div>
+                            <div>
+                                <label class="field-label">Relationship <span class="text-brand-500">*</span></label>
+                                <select name="emergency_contact_relationship" required class="field-input">
+                                    <option value="" disabled selected>— Select —</option>
+                                    <option value="Spouse / Partner">Spouse / Partner</option>
+                                    <option value="Parent">Parent</option>
+                                    <option value="Sibling">Sibling</option>
+                                    <option value="Child">Child</option>
+                                    <option value="Friend">Friend</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label">Phone Number <span class="text-brand-500">*</span></label>
+                                <input type="tel" name="emergency_contact_phone" required placeholder="07000 000000" class="field-input">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ──────────────────────────────────── -->
+            <!-- SECTION 3: Right to Work            -->
+            <!-- ──────────────────────────────────── -->
+            <div class="section-card shadow-lift">
+                <div class="section-header">
+                    <div class="section-step">03</div>
+                    <div>
+                        <h2 class="font-display font-bold text-slate-900 text-base leading-tight">Statutory Right to Work</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">UK Home Office verification — legally required before placement</p>
+                    </div>
+                </div>
+                <div class="section-body space-y-4">
+
+                    <div>
+                        <label class="field-label">Nationality Status <span class="text-brand-500">*</span></label>
+                        <select name="nationality_status" id="nationality_status" required class="field-input">
+                            <option value="" disabled selected>— Select nationality profile —</option>
+                            <option value="uk-irish">United Kingdom / Irish Citizen</option>
+                            <option value="non-uk">Non-UK / Irish (Requires Share Code)</option>
+                        </select>
+                    </div>
+
+                    <!-- UK/Irish block -->
+                    <div id="rtw-uk-block" class="hidden space-y-3">
+                        <div class="file-zone" id="fz-passport">
+                            <input type="file" name="file_passport" id="file_passport" accept=".jpg,.jpeg,.png,.pdf" onchange="setFileZone(this,'fz-passport')">
+                            <svg class="w-7 h-7 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                            <p class="text-sm font-semibold text-slate-600">Upload Passport</p>
+                            <p class="text-xs text-slate-400 mt-1">JPG, PNG or PDF · Max 7MB</p>
+                            <p class="file-name text-xs text-green-600 font-semibold mt-1 hidden"></p>
+                        </div>
+                    </div>
+
+                    <!-- Non-UK block -->
+                    <div id="rtw-non-uk-block" class="hidden space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label">Home Office Share Code <span class="text-brand-500">*</span></label>
+                                <input type="text" name="evisa_share_code" id="evisa_share_code" placeholder="A12 345 67G" class="field-input font-mono uppercase" style="letter-spacing:0.1em;">
+                                <p class="field-hint">9-character code from UKVI online service.</p>
+                            </div>
+                            <div>
+                                <label class="field-label">Confirm Date of Birth <span class="text-brand-500">*</span></label>
+                                <input type="date" name="evisa_dob_confirm" id="evisa_dob_confirm" onclick="this.showPicker && this.showPicker()" class="field-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proof of Address (always shown) -->
+                    <div class="info-alert">
+                        <div class="flex items-start gap-2 mb-2">
+                            <svg class="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                            <span class="font-semibold text-sm">Proof of UK Residential Address <span class="text-brand-500">*</span></span>
+                        </div>
+                        <p class="text-xs text-blue-700/80 mb-3">Utility bill, bank statement, or council tax letter — dated within the last 3 months.</p>
+                        <div class="file-zone" id="fz-proof-address">
+                            <input type="file" name="file_proof_of_address" id="file_proof_of_address" required accept=".jpg,.jpeg,.png,.pdf" onchange="setFileZone(this,'fz-proof-address')">
+                            <svg class="w-6 h-6 text-slate-300 mx-auto mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                            <p class="text-sm font-semibold text-slate-600">Upload Address Proof</p>
+                            <p class="text-xs text-slate-400 mt-0.5">JPG, PNG or PDF · Max 7MB</p>
+                            <p class="file-name text-xs text-green-600 font-semibold mt-1 hidden"></p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ──────────────────────────────────── -->
+            <!-- SECTION 4: Sector Selection         -->
+            <!-- ──────────────────────────────────── -->
+            <div class="section-card shadow-lift">
+                <div class="section-header">
+                    <div class="section-step">04</div>
+                    <div>
+                        <h2 class="font-display font-bold text-slate-900 text-base leading-tight">Sector Selection & Compliance</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Select all that apply — each unlocks sector-specific compliance fields</p>
+                    </div>
+                </div>
+                <div class="section-body space-y-4">
+
+                    <!-- Logistics -->
+                    <div class="niche-card">
+                        <div class="niche-header">
+                            <input type="checkbox" name="niche_logistics" id="niche_logistics" value="Yes" class="w-5 h-5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                            <label for="niche_logistics" class="font-bold text-slate-900 text-sm cursor-pointer flex items-center gap-2">
+                                <span class="text-lg">📦</span> General Logistics
+                            </label>
+                        </div>
+                        <div class="px-5 pb-4 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <label class="choice-card text-sm">
+                                    <input type="checkbox" name="skill_logistics_picker" value="Picker" style="accent-color:var(--brand-500);">
+                                    <span class="font-medium text-slate-700">Warehouse Picker/Packer</span>
+                                </label>
+                                <label class="choice-card text-sm">
+                                    <input type="checkbox" name="skill_logistics_loader" value="Loader" style="accent-color:var(--brand-500);">
+                                    <span class="font-medium text-slate-700">Loader</span>
+                                </label>
+                                <label class="choice-card text-sm">
+                                    <input type="checkbox" name="skill_logistics_prod" value="Operative" style="accent-color:var(--brand-500);">
+                                    <span class="font-medium text-slate-700">Production Line Operative</span>
+                                </label>
+                            </div>
+                            <label class="flex items-center gap-2 text-xs font-semibold text-brand-500 cursor-pointer">
+                                <input type="checkbox" name="ppe_kit_confirmation" value="Yes" style="accent-color:var(--brand-500);">
+                                I own my own personal protective equipment (PPE)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Forklift -->
+                    <div class="niche-card">
+                        <div class="niche-header">
+                            <input type="checkbox" name="niche_forklift" id="niche_forklift" value="Yes" class="w-5 h-5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                            <label for="niche_forklift" class="font-bold text-slate-900 text-sm cursor-pointer flex items-center gap-2">
+                                <span class="text-lg">🚜</span> Forklift — Specialized
+                            </label>
+                        </div>
+                        <div id="compliance-forklift" class="hidden px-5 pb-4 pt-3 border-t border-slate-100 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="field-label">Manning Profile <span class="text-brand-500">*</span></label>
+                                    <select name="forklift_type" id="forklift_type" class="field-input flt-field">
+                                        <option value="" disabled selected>— Select classification —</option>
+                                        <option value="Counterbalance">Counterbalance</option>
+                                        <option value="Reach">Reach</option>
+                                        <option value="Both">Both Licenses Active</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="field-label">Accredited License <span class="text-brand-500">*</span></label>
+                                    <div class="file-zone" id="fz-flt">
+                                        <input type="file" name="file_forklift_license" id="file_forklift_license" accept=".jpg,.jpeg,.png,.pdf" class="flt-field" onchange="setFileZone(this,'fz-flt')">
+                                        <p class="text-sm font-semibold text-slate-600">Upload FLT License</p>
+                                        <p class="text-xs text-slate-400 mt-0.5">JPG, PNG or PDF · Max 7MB</p>
+                                        <p class="file-name text-xs text-green-600 font-semibold mt-1 hidden"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Construction -->
+                    <div class="niche-card">
+                        <div class="niche-header">
+                            <input type="checkbox" name="niche_construction" id="niche_construction" value="Yes" class="w-5 h-5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                            <label for="niche_construction" class="font-bold text-slate-900 text-sm cursor-pointer flex items-center gap-2">
+                                <span class="text-lg">🏗️</span> Construction
+                            </label>
+                        </div>
+                        <div id="compliance-construction" class="hidden px-5 pb-4 pt-3 border-t border-slate-100 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="field-label">CSCS Registration Number <span class="text-brand-500">*</span></label>
+                                    <input type="text" name="cscs_number" id="cscs_number" class="field-input construction-field">
+                                </div>
+                                <div>
+                                    <label class="field-label">Card Colour Type <span class="text-brand-500">*</span></label>
+                                    <select name="cscs_card_type" id="cscs_card_type" class="field-input construction-field">
+                                        <option value="" disabled selected>— Select —</option>
+                                        <option value="Green">Green — Labourer</option>
+                                        <option value="Blue">Blue — Skilled Worker</option>
+                                        <option value="Gold">Gold — Advanced / Supervisor</option>
+                                        <option value="Red">Red — Provisional</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="field-label">Upload CSCS Card <span class="text-brand-500">*</span></label>
+                                <div class="file-zone" id="fz-cscs">
+                                    <input type="file" name="file_cscs_card" id="file_cscs_card" accept=".jpg,.jpeg,.png,.pdf" class="construction-field" onchange="setFileZone(this,'fz-cscs')">
+                                    <p class="text-sm font-semibold text-slate-600">Upload CSCS Card</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">JPG, PNG or PDF · Max 7MB</p>
+                                    <p class="file-name text-xs text-green-600 font-semibold mt-1 hidden"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Care -->
+                    <div class="niche-card">
+                        <div class="niche-header">
+                            <input type="checkbox" name="niche_care" id="niche_care" value="Yes" class="w-5 h-5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                            <label for="niche_care" class="font-bold text-slate-900 text-sm cursor-pointer flex items-center gap-2">
+                                <span class="text-lg">🏥</span> Care Sector
+                            </label>
+                        </div>
+                        <div id="compliance-care" class="hidden px-5 pb-4 pt-3 border-t border-slate-100 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="field-label">Enhanced DBS Number <span class="text-brand-500">*</span></label>
+                                    <input type="text" name="dbs_number" id="dbs_number" class="field-input care-field font-mono">
+                                </div>
+                                <div class="flex items-end pb-1">
+                                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
+                                        <input type="checkbox" name="dbs_update_service" value="Yes" style="accent-color:var(--brand-500);">
+                                        Active on DBS Update Service
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="field-label">Mandatory Training Records <span class="text-brand-500">*</span></label>
+                                <div class="file-zone" id="fz-care">
+                                    <input type="file" name="file_care_training" id="file_care_training" accept=".jpg,.jpeg,.png,.pdf" class="care-field" onchange="setFileZone(this,'fz-care')">
+                                    <p class="text-sm font-semibold text-slate-600">Upload Training Records</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">JPG, PNG or PDF · Max 7MB</p>
+                                    <p class="file-name text-xs text-green-600 font-semibold mt-1 hidden"></p>
+                                </div>
+                            </div>
+                            <!-- DBS Certificate Upload -->
+                            <div>
+                                <label class="field-label">DBS Certificate <span class="tag-optional">Optional</span></label>
+                                <div class="file-zone" id="fz-dbs">
+                                    <input type="file" name="file_dbs_certificate" id="file_dbs_certificate" accept=".jpg,.jpeg,.png,.pdf" onchange="setFileZone(this,'fz-dbs')">
+                                    <p class="text-sm font-semibold text-slate-600">Upload DBS Certificate</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">JPG, PNG or PDF · Max 7MB</p>
+                                    <p class="file-name text-xs text-green-600 font-semibold mt-1 hidden"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ──────────────────────────────────── -->
+            <!-- SECTION 5: Logistics & Mobilisation -->
+            <!-- ──────────────────────────────────── -->
+            <div class="section-card shadow-lift">
+                <div class="section-header">
+                    <div class="section-step">05</div>
+                    <div>
+                        <h2 class="font-display font-bold text-slate-900 text-base leading-tight">Logistics & Mobilisation</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Transport arrangements and shift availability preferences</p>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                        <!-- Transport -->
+                        <div>
+                            <label class="field-label mb-3">Transport Status <span class="text-brand-500">*</span></label>
+                            <div class="space-y-2">
+                                <div class="choice-card">
+                                    <input type="radio" name="logistics_transport_status" id="trans_owner" value="Vehicle Owner" required class="w-4 h-4 mt-0.5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                    <div class="flex-1">
+                                        <label for="trans_owner" class="font-bold text-sm text-slate-800 cursor-pointer block">I Own a Vehicle</label>
+                                        <div id="sub-owner-block" class="sub-block hidden mt-2">
+                                            <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="vehicle_owner_option" value="Wants Fuel Bonus" class="w-3.5 h-3.5 owner-sub-field" style="accent-color:var(--brand-500);"><span class="text-slate-600">I'd love fuel bonuses for carpooling</span></label>
+                                            <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="vehicle_owner_option" value="No Carpool" class="w-3.5 h-3.5 owner-sub-field" style="accent-color:var(--brand-500);"><span class="text-slate-600">No carpool, thank you</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="choice-card">
+                                    <input type="radio" name="logistics_transport_status" id="trans_non_owner" value="No Vehicle" class="w-4 h-4 mt-0.5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                    <div class="flex-1">
+                                        <label for="trans_non_owner" class="font-bold text-sm text-slate-800 cursor-pointer block">I Don't Own a Vehicle</label>
+                                        <div id="sub-non-owner-block" class="sub-block hidden mt-2">
+                                            <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="non_owner_option" value="Wants Carpool" class="w-3.5 h-3.5 non-owner-sub-field" style="accent-color:var(--brand-500);"><span class="text-slate-600">I would love to carpool</span></label>
+                                            <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="non_owner_option" value="Public Transport" class="w-3.5 h-3.5 non-owner-sub-field" style="accent-color:var(--brand-500);"><span class="text-slate-600">I will use public transport</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Shifts -->
+                        <div>
+                            <label class="field-label mb-3">Shift Preferences <span class="text-brand-500">*</span></label>
+                            <div class="space-y-2">
+                                <label class="choice-card">
+                                    <input type="radio" name="preferred_shift_pattern" value="Day" required class="w-4 h-4 mt-0.5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                    <div>
+                                        <span class="font-bold text-sm text-slate-800">Day Shift</span>
+                                        <p class="text-xs text-slate-400 mt-0.5">Typically 06:00 – 18:00</p>
+                                    </div>
+                                </label>
+                                <label class="choice-card">
+                                    <input type="radio" name="preferred_shift_pattern" value="Night" class="w-4 h-4 mt-0.5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                    <div>
+                                        <span class="font-bold text-sm text-slate-800">Night Shift</span>
+                                        <p class="text-xs text-slate-400 mt-0.5">Typically 18:00 – 06:00</p>
+                                    </div>
+                                </label>
+                                <label class="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-brand-500/20 bg-brand-500/5 cursor-pointer">
+                                    <input type="checkbox" name="emergency_shift_availability" value="Yes" class="w-4 h-4" style="accent-color:var(--brand-500);">
+                                    <span class="text-sm font-semibold text-brand-500">Available for Emergency Deployment</span>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ──────────────────────────────────── -->
+            <!-- SECTION 6: Payroll & HMRC            -->
+            <!-- ──────────────────────────────────── -->
+            <div class="section-card shadow-lift">
+                <div class="section-header">
+                    <div class="section-step">06</div>
+                    <div>
+                        <h2 class="font-display font-bold text-slate-900 text-base leading-tight">Payroll Setup & HMRC Declaration</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Bank details for payment and your statutory starter checklist</p>
+                    </div>
+                </div>
+                <div class="section-body space-y-5">
+
+                    <!-- Bank Details -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                            UK Bank Account Details
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="field-label">Account Holder Name <span class="text-brand-500">*</span></label>
+                                <input type="text" name="bank_account_name" required class="field-input">
+                            </div>
+                            <div>
+                                <label class="field-label">Sort Code <span class="text-brand-500">*</span></label>
+                                <input type="text" name="bank_sort_code" required maxlength="8" placeholder="00-00-00" class="field-input font-mono" style="letter-spacing:0.06em;">
+                            </div>
+                            <div>
+                                <label class="field-label">Account Number <span class="text-brand-500">*</span></label>
+                                <input type="text" name="bank_account_number" required maxlength="8" placeholder="00000000" class="field-input font-mono" style="letter-spacing:0.06em;">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="field-label">Bank Statement <span class="text-brand-500">*</span></label>
+                            <div class="file-zone" id="fz-bank">
+                                <input type="file" name="file_bank_statement" id="file_bank_statement" required accept=".jpg,.jpeg,.png,.pdf" onchange="setFileZone(this,'fz-bank')">
+                                <p class="text-sm font-semibold text-slate-600">Upload Bank Statement</p>
+                                <p class="text-xs text-slate-400 mt-0.5">JPG, PNG or PDF · Max 7MB</p>
+                                <p class="file-name text-xs text-green-600 font-semibold mt-1 hidden"></p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="field-label">NI Document <span class="text-brand-500">*</span></label>
+                            <div class="file-zone" id="fz-ni">
+                                <input type="file" name="file_ni_document" id="file_ni_document" required accept=".jpg,.jpeg,.png,.pdf" onchange="setFileZone(this,'fz-ni')">
+                                <p class="text-sm font-semibold text-slate-600">Upload NI Document</p>
+                                <p class="text-xs text-slate-400 mt-0.5">JPG, PNG or PDF · Max 7MB</p>
+                                <p class="file-name text-xs text-green-600 font-semibold mt-1 hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <!-- HMRC -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-700 mb-1">HMRC Starter Checklist <span class="text-brand-500">*</span></h3>
+                        <p class="text-xs text-slate-400 mb-3">Select the statement that applies to you as of today.</p>
+                        <div class="space-y-2">
+                            <label class="choice-card">
+                                <input type="radio" name="hmrc_starter_declaration" value="A" required class="w-4 h-4 mt-1 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                <div>
+                                    <span class="font-bold text-sm text-slate-800">Statement A</span>
+                                    <p class="text-xs text-slate-500 mt-0.5">This is my first job since 6 April and I have not been receiving any benefits.</p>
+                                </div>
+                            </label>
+                            <label class="choice-card">
+                                <input type="radio" name="hmrc_starter_declaration" value="B" class="w-4 h-4 mt-1 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                <div>
+                                    <span class="font-bold text-sm text-slate-800">Statement B</span>
+                                    <p class="text-xs text-slate-500 mt-0.5">This is now my only job, but since 6 April I have had another job or received taxable benefits.</p>
+                                </div>
+                            </label>
+                            <label class="choice-card">
+                                <input type="radio" name="hmrc_starter_declaration" value="C" class="w-4 h-4 mt-1 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                <div>
+                                    <span class="font-bold text-sm text-slate-800">Statement C</span>
+                                    <p class="text-xs text-slate-500 mt-0.5">I have another job and/or receive a State or Occupational Pension.</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ──────────────────────────────────── -->
+            <!-- SECTION 7: Health, Fitness & Legal  -->
+            <!-- ──────────────────────────────────── -->
+            <div class="section-card shadow-lift">
+                <div class="section-header">
+                    <div class="section-step">07</div>
+                    <div>
+                        <h2 class="font-display font-bold text-slate-900 text-base leading-tight">Health, Availability & Declarations</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Start date, fitness to work, and statutory declarations</p>
+                    </div>
+                </div>
+                <div class="section-body space-y-5">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">Earliest Start Date <span class="text-brand-500">*</span></label>
+                            <input type="date" name="availability_start_date" required onclick="this.showPicker && this.showPicker()" class="field-input">
+                        </div>
+                        <div>
+                            <label class="field-label">Working Radius <span class="text-brand-500">*</span></label>
+                            <select name="travel_radius" required class="field-input">
+                                <option value="" disabled selected>— Select radius —</option>
+                                <option value="5 miles">Up to 5 miles</option>
+                                <option value="10 miles">Up to 10 miles</option>
+                                <option value="15 miles">Up to 15 miles</option>
+                                <option value="20 miles">Up to 20 miles</option>
+                                <option value="25+ miles">25+ miles</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fitness to Work -->
+                    <div>
+                        <label class="field-label mb-2">Fitness to Work <span class="text-brand-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="choice-card">
+                                <input type="radio" name="fitness_to_work" value="Fully Fit" required class="w-4 h-4 mt-0.5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                <span class="font-semibold text-sm text-slate-800">Fully fit — no conditions or limitations</span>
+                            </label>
+                            <label class="choice-card">
+                                <input type="radio" name="fitness_to_work" value="Fit with Adjustments" class="w-4 h-4 mt-0.5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                <span class="font-semibold text-sm text-slate-800">Fit but require reasonable adjustments</span>
+                            </label>
+                        </div>
+                        <div id="adjustment-notes-block" class="hidden mt-3">
+                            <label class="field-label">Please describe the adjustments required</label>
+                            <textarea name="reasonable_adjustments_detail" id="reasonable_adjustments_detail" rows="2" placeholder="Describe the adjustments needed..." class="field-input"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="section-divider"></div>
+
+                    <!-- Criminal Convictions -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 mb-1">Criminal Convictions Declaration <span class="text-brand-500">*</span></h3>
+                        <p class="text-xs text-slate-400 mb-3">In accordance with the Rehabilitation of Offenders Act 1974.</p>
+                        <div class="space-y-2">
+                            <label class="choice-card">
+                                <input type="radio" name="criminal_conviction" value="No" required class="w-4 h-4 mt-0.5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                <span class="font-semibold text-sm text-slate-800">No unspent convictions to declare</span>
+                            </label>
+                            <label class="choice-card">
+                                <input type="radio" name="criminal_conviction" value="Yes" class="w-4 h-4 mt-0.5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                                <span class="font-semibold text-sm text-slate-800">I have unspent convictions to declare</span>
+                            </label>
+                        </div>
+                        <div id="conviction-detail-block" class="hidden mt-3">
+                            <label class="field-label">Please provide details</label>
+                            <textarea name="conviction_details" id="conviction_details" rows="3" placeholder="Please provide details of your unspent conviction(s)..." class="field-input"></textarea>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ──────────────────────────────────── -->
+            <!-- SUBMISSION                          -->
+            <!-- ──────────────────────────────────── -->
+            <div class="section-card shadow-lift">
+                <div class="section-body space-y-5">
+
+                    <!-- GDPR Consent -->
+                    <label class="flex items-start gap-3 p-4 bg-brand-50 border border-brand-500/20 rounded-xl cursor-pointer hover:bg-orange-50 transition-colors">
+                        <input type="checkbox" name="consent" value="Agreed" required class="mt-0.5 w-5 h-5 flex-shrink-0" style="accent-color:var(--brand-500);">
+                        <div class="text-sm text-slate-700 leading-relaxed">
+                            <strong class="font-bold text-slate-900">UK GDPR Consent <span class="text-brand-500">*</span></strong>
+                            <br>I acknowledge that my personal data and documents will be securely processed and stored by WELLDONE GROUP for the purposes of worker screening, right-to-work verification, and payroll administration in accordance with the UK GDPR.
+                        </div>
+                    </label>
+
+                    <button type="submit" class="btn-submit">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Submit Application & Join Roster
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+
+                    <p class="text-center text-xs text-slate-400">Your data is encrypted in transit and at rest · Hosted on Supabase EU infrastructure</p>
+
+                </div>
+            </div>
+
+        </form>
+
+        <p class="text-center mt-8 text-xs text-slate-400 font-semibold tracking-widest uppercase">
+            &copy; 2026 WELLDONE GROUP · Secure Application Portal
+        </p>
+    </div>
+</main>
+
+<!-- ═══════════════════════════════════════
+     SUBMISSION MODAL
+════════════════════════════════════════ -->
+<div id="submissionModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4">
+    <div class="modal-card animate-in">
+
+        <img src="logo/logo.png" onerror="this.onerror=null;this.src='https://placehold.co/120x40/ea580c/ffffff?text=LOGO';" alt="WELLDONE" class="h-9 mx-auto mb-8">
+
+        <!-- Loading -->
+        <div id="modalLoadingState">
+            <div class="spinner"></div>
+            <h3 class="font-display font-bold text-xl text-slate-900 mb-1.5" id="loadingText">Authenticating...</h3>
+            <p class="text-slate-400 text-sm">Please do not close or refresh this window.</p>
+        </div>
+
+        <!-- Success -->
+        <div id="modalSuccessState" class="hidden">
+            <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
+                <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h3 class="font-display font-bold text-2xl text-slate-900 mb-2">Application Submitted!</h3>
+            <p class="text-slate-500 text-sm mb-7 leading-relaxed max-w-xs mx-auto">Thank you for registering. An admin will review your documents and contact you once approved so you can access the workers portal.</p>
+            <button id="closeSuccessBtn" class="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-green-500/25">Finish</button>
+        </div>
+
+        <!-- Error -->
+        <div id="modalErrorState" class="hidden">
+            <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-5">
+                <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+            </div>
+            <h3 class="font-display font-bold text-xl text-slate-900 mb-2">Submission Failed</h3>
+            <p class="text-red-600 text-sm mb-7 font-medium" id="errorText">An error occurred. Please try again.</p>
+            <button id="closeErrorBtn" class="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition-all">Go Back & Try Again</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════ -->
+<script>
+    // ── File zone helper ──
+    function setFileZone(input, zoneId) {
+        const zone = document.getElementById(zoneId);
+        const nameEl = zone ? zone.querySelector('.file-name') : null;
+        if (input.files && input.files[0]) {
+            if (input.files[0].size > 7 * 1024 * 1024) {
+                alert('File exceeds the 7MB limit. Please choose a smaller file.');
+                input.value = '';
+                if (zone) zone.classList.remove('has-file');
+                if (nameEl) nameEl.classList.add('hidden');
+                return;
+            }
+            if (zone) zone.classList.add('has-file');
+            if (nameEl) { nameEl.textContent = '✓ ' + input.files[0].name; nameEl.classList.remove('hidden'); }
+        } else {
+            if (zone) zone.classList.remove('has-file');
+            if (nameEl) nameEl.classList.add('hidden');
+        }
+    }
+
+    // ── Country codes ──
+    const countryData = [
+        {f:'🇬🇧',c:'+44',n:'United Kingdom'},{f:'🇺🇸',c:'+1',n:'United States'},{f:'🇨🇦',c:'+1',n:'Canada'},{f:'🇮🇪',c:'+353',n:'Ireland'},
+        {f:'🇦🇺',c:'+61',n:'Australia'},{f:'🇳🇿',c:'+64',n:'New Zealand'},{f:'🇦🇫',c:'+93',n:'Afghanistan'},{f:'🇦🇱',c:'+355',n:'Albania'},
+        {f:'🇩🇿',c:'+213',n:'Algeria'},{f:'🇦🇸',c:'+1-684',n:'American Samoa'},{f:'🇦🇩',c:'+376',n:'Andorra'},{f:'🇦🇴',c:'+244',n:'Angola'},
+        {f:'🇦🇮',c:'+1-264',n:'Anguilla'},{f:'🇦🇬',c:'+1-268',n:'Antigua and Barbuda'},{f:'🇦🇷',c:'+54',n:'Argentina'},{f:'🇦🇲',c:'+374',n:'Armenia'},
+        {f:'🇦🇼',c:'+297',n:'Aruba'},{f:'🇦🇹',c:'+43',n:'Austria'},{f:'🇦🇿',c:'+994',n:'Azerbaijan'},{f:'🇧🇸',c:'+1-242',n:'Bahamas'},
+        {f:'🇧🇭',c:'+973',n:'Bahrain'},{f:'🇧🇩',c:'+880',n:'Bangladesh'},{f:'🇧🇧',c:'+1-246',n:'Barbados'},{f:'🇧🇾',c:'+375',n:'Belarus'},
+        {f:'🇧🇪',c:'+32',n:'Belgium'},{f:'🇧🇿',c:'+501',n:'Belize'},{f:'🇧🇯',c:'+229',n:'Benin'},{f:'🇧🇲',c:'+1-441',n:'Bermuda'},
+        {f:'🇧🇹',c:'+975',n:'Bhutan'},{f:'🇧🇴',c:'+591',n:'Bolivia'},{f:'🇧🇦',c:'+387',n:'Bosnia and Herzegovina'},{f:'🇧🇼',c:'+267',n:'Botswana'},
+        {f:'🇧🇷',c:'+55',n:'Brazil'},{f:'🇮🇴',c:'+246',n:'British Indian Ocean Territory'},{f:'🇻🇬',c:'+1-284',n:'British Virgin Islands'},{f:'🇧🇳',c:'+673',n:'Brunei'},
+        {f:'🇧🇬',c:'+359',n:'Bulgaria'},{f:'🇧🇫',c:'+226',n:'Burkina Faso'},{f:'🇧🇮',c:'+257',n:'Burundi'},{f:'🇰🇭',c:'+855',n:'Cambodia'},
+        {f:'🇨🇲',c:'+237',n:'Cameroon'},{f:'🇨🇻',c:'+238',n:'Cape Verde'},{f:'🇰🇾',c:'+1-345',n:'Cayman Islands'},{f:'🇨🇫',c:'+236',n:'Central African Republic'},
+        {f:'🇹🇩',c:'+235',n:'Chad'},{f:'🇨🇱',c:'+56',n:'Chile'},{f:'🇨🇳',c:'+86',n:'China'},{f:'🇨🇽',c:'+61',n:'Christmas Island'},
+        {f:'🇨🇨',c:'+61',n:'Cocos Islands'},{f:'🇨🇴',c:'+57',n:'Colombia'},{f:'🇰🇲',c:'+269',n:'Comoros'},{f:'🇨🇰',c:'+682',n:'Cook Islands'},
+        {f:'🇨🇷',c:'+506',n:'Costa Rica'},{f:'🇭🇷',c:'+385',n:'Croatia'},{f:'🇨🇺',c:'+53',n:'Cuba'},{f:'🇨🇼',c:'+599',n:'Curacao'},
+        {f:'🇨🇾',c:'+357',n:'Cyprus'},{f:'🇨🇿',c:'+420',n:'Czech Republic'},{f:'🇨🇩',c:'+243',n:'Democratic Republic of the Congo'},{f:'🇩🇰',c:'+45',n:'Denmark'},
+        {f:'🇩🇯',c:'+253',n:'Djibouti'},{f:'🇩🇲',c:'+1-767',n:'Dominica'},{f:'🇩🇴',c:'+1-809',n:'Dominican Republic'},{f:'🇹🇱',c:'+670',n:'East Timor'},
+        {f:'🇪🇨',c:'+593',n:'Ecuador'},{f:'🇪🇬',c:'+20',n:'Egypt'},{f:'🇸🇻',c:'+503',n:'El Salvador'},{f:'🇬🇶',c:'+240',n:'Equatorial Guinea'},
+        {f:'🇪🇷',c:'+291',n:'Eritrea'},{f:'🇪🇪',c:'+372',n:'Estonia'},{f:'🇪🇹',c:'+251',n:'Ethiopia'},{f:'🇫🇰',c:'+500',n:'Falkland Islands'},
+        {f:'🇫🇴',c:'+298',n:'Faroe Islands'},{f:'🇫🇯',c:'+679',n:'Fiji'},{f:'🇫🇮',c:'+358',n:'Finland'},{f:'🇫🇷',c:'+33',n:'France'},
+        {f:'🇵🇫',c:'+689',n:'French Polynesia'},{f:'🇬🇦',c:'+241',n:'Gabon'},{f:'🇬🇲',c:'+220',n:'Gambia'},{f:'🇬🇪',c:'+995',n:'Georgia'},
+        {f:'🇩🇪',c:'+49',n:'Germany'},{f:'🇬🇭',c:'+233',n:'Ghana'},{f:'🇬🇮',c:'+350',n:'Gibraltar'},{f:'🇬🇷',c:'+30',n:'Greece'},
+        {f:'🇬🇱',c:'+299',n:'Greenland'},{f:'🇬🇩',c:'+1-473',n:'Grenada'},{f:'🇬🇺',c:'+1-671',n:'Guam'},{f:'🇬🇹',c:'+502',n:'Guatemala'},
+        {f:'🇬🇬',c:'+44-1481',n:'Guernsey'},{f:'🇬🇳',c:'+224',n:'Guinea'},{f:'🇬🇼',c:'+245',n:'Guinea-Bissau'},{f:'🇬🇾',c:'+592',n:'Guyana'},
+        {f:'🇭🇹',c:'+509',n:'Haiti'},{f:'🇭🇳',c:'+504',n:'Honduras'},{f:'🇭🇰',c:'+852',n:'Hong Kong'},{f:'🇭🇺',c:'+36',n:'Hungary'},
+        {f:'🇮🇸',c:'+354',n:'Iceland'},{f:'🇮🇳',c:'+91',n:'India'},{f:'🇮🇩',c:'+62',n:'Indonesia'},{f:'🇮🇷',c:'+98',n:'Iran'},
+        {f:'🇮🇶',c:'+964',n:'Iraq'},{f:'🇮🇲',c:'+44-1624',n:'Isle of Man'},{f:'🇮🇱',c:'+972',n:'Israel'},{f:'🇮🇹',c:'+39',n:'Italy'},
+        {f:'🇨🇮',c:'+225',n:'Ivory Coast'},{f:'🇯🇲',c:'+1-876',n:'Jamaica'},{f:'🇯🇵',c:'+81',n:'Japan'},{f:'🇯🇪',c:'+44-1534',n:'Jersey'},
+        {f:'🇯🇴',c:'+962',n:'Jordan'},{f:'🇰🇿',c:'+7',n:'Kazakhstan'},{f:'🇰🇪',c:'+254',n:'Kenya'},{f:'🇰🇮',c:'+686',n:'Kiribati'},
+        {f:'🇽🇰',c:'+383',n:'Kosovo'},{f:'🇰🇼',c:'+965',n:'Kuwait'},{f:'🇰🇬',c:'+996',n:'Kyrgyzstan'},{f:'🇱🇦',c:'+856',n:'Laos'},
+        {f:'🇱🇻',c:'+371',n:'Latvia'},{f:'🇱🇧',c:'+961',n:'Lebanon'},{f:'🇱🇸',c:'+266',n:'Lesotho'},{f:'🇱🇷',c:'+231',n:'Liberia'},
+        {f:'🇱🇾',c:'+218',n:'Libya'},{f:'🇱🇮',c:'+423',n:'Liechtenstein'},{f:'🇱🇹',c:'+370',n:'Lithuania'},{f:'🇱🇺',c:'+352',n:'Luxembourg'},
+        {f:'🇲🇴',c:'+853',n:'Macao'},{f:'🇲🇰',c:'+389',n:'Macedonia'},{f:'🇲🇬',c:'+261',n:'Madagascar'},{f:'🇲🇼',c:'+265',n:'Malawi'},
+        {f:'🇲🇾',c:'+60',n:'Malaysia'},{f:'🇲🇻',c:'+960',n:'Maldives'},{f:'🇲🇱',c:'+223',n:'Mali'},{f:'🇲🇹',c:'+356',n:'Malta'},
+        {f:'🇲🇭',c:'+692',n:'Marshall Islands'},{f:'🇲🇷',c:'+222',n:'Mauritania'},{f:'🇲🇺',c:'+230',n:'Mauritius'},{f:'🇾🇹',c:'+262',n:'Mayotte'},
+        {f:'🇲🇽',c:'+52',n:'Mexico'},{f:'🇫🇲',c:'+691',n:'Micronesia'},{f:'🇲🇩',c:'+373',n:'Moldova'},{f:'🇲🇨',c:'+377',n:'Monaco'},
+        {f:'🇲🇳',c:'+976',n:'Mongolia'},{f:'🇲🇪',c:'+382',n:'Montenegro'},{f:'🇲🇸',c:'+1-664',n:'Montserrat'},{f:'🇲🇦',c:'+212',n:'Morocco'},
+        {f:'🇲🇿',c:'+258',n:'Mozambique'},{f:'🇲🇲',c:'+95',n:'Myanmar'},{f:'🇳🇦',c:'+264',n:'Namibia'},{f:'🇳🇷',c:'+674',n:'Nauru'},
+        {f:'🇳🇵',c:'+977',n:'Nepal'},{f:'🇳🇱',c:'+31',n:'Netherlands'},{f:'🇳🇨',c:'+687',n:'New Caledonia'},{f:'🇳🇮',c:'+505',n:'Nicaragua'},
+        {f:'🇳🇪',c:'+227',n:'Niger'},{f:'🇳🇬',c:'+234',n:'Nigeria'},{f:'🇳🇺',c:'+683',n:'Niue'},{f:'🇰🇵',c:'+850',n:'North Korea'},
+        {f:'🇲🇵',c:'+1-670',n:'Northern Mariana Islands'},{f:'🇳🇴',c:'+47',n:'Norway'},{f:'🇴🇲',c:'+968',n:'Oman'},{f:'🇵🇰',c:'+92',n:'Pakistan'},
+        {f:'🇵🇼',c:'+680',n:'Palau'},{f:'🇵🇸',c:'+970',n:'Palestine'},{f:'🇵🇦',c:'+507',n:'Panama'},{f:'🇵🇬',c:'+675',n:'Papua New Guinea'},
+        {f:'🇵🇾',c:'+595',n:'Paraguay'},{f:'🇵🇪',c:'+51',n:'Peru'},{f:'🇵🇭',c:'+63',n:'Philippines'},{f:'🇵🇳',c:'+64',n:'Pitcairn'},
+        {f:'🇵🇱',c:'+48',n:'Poland'},{f:'🇵🇹',c:'+351',n:'Portugal'},{f:'🇵🇷',c:'+1-787',n:'Puerto Rico'},{f:'🇶🇦',c:'+974',n:'Qatar'},
+        {f:'🇨🇬',c:'+242',n:'Republic of the Congo'},{f:'🇷🇪',c:'+262',n:'Reunion'},{f:'🇷🇴',c:'+40',n:'Romania'},{f:'🇷🇺',c:'+7',n:'Russia'},
+        {f:'🇷🇼',c:'+250',n:'Rwanda'},{f:'🇧🇱',c:'+590',n:'Saint Barthelemy'},{f:'🇸🇭',c:'+290',n:'Saint Helena'},{f:'🇰🇳',c:'+1-869',n:'Saint Kitts and Nevis'},
+        {f:'🇱🇨',c:'+1-758',n:'Saint Lucia'},{f:'🇲🇫',c:'+590',n:'Saint Martin'},{f:'🇵🇲',c:'+508',n:'Saint Pierre and Miquelon'},{f:'🇻🇨',c:'+1-784',n:'Saint Vincent and the Grenadines'},
+        {f:'🇼🇸',c:'+685',n:'Samoa'},{f:'🇸🇲',c:'+378',n:'San Marino'},{f:'🇸🇹',c:'+239',n:'Sao Tome and Principe'},{f:'🇸🇦',c:'+966',n:'Saudi Arabia'},
+        {f:'🇸🇳',c:'+221',n:'Senegal'},{f:'🇷🇸',c:'+381',n:'Serbia'},{f:'🇸🇨',c:'+248',n:'Seychelles'},{f:'🇸🇱',c:'+232',n:'Sierra Leone'},
+        {f:'🇸🇬',c:'+65',n:'Singapore'},{f:'🇸🇽',c:'+1-721',n:'Sint Maarten'},{f:'🇸🇰',c:'+421',n:'Slovakia'},{f:'🇸🇮',c:'+386',n:'Slovenia'},
+        {f:'🇸🇧',c:'+677',n:'Solomon Islands'},{f:'🇸🇴',c:'+252',n:'Somalia'},{f:'🇿🇦',c:'+27',n:'South Africa'},{f:'🇰🇷',c:'+82',n:'South Korea'},
+        {f:'🇸🇸',c:'+211',n:'South Sudan'},{f:'🇪🇸',c:'+34',n:'Spain'},{f:'🇱🇰',c:'+94',n:'Sri Lanka'},{f:'🇸🇩',c:'+249',n:'Sudan'},
+        {f:'🇸🇷',c:'+597',n:'Suriname'},{f:'🇸🇯',c:'+47',n:'Svalbard and Jan Mayen'},{f:'🇸🇿',c:'+268',n:'Swaziland'},{f:'🇸🇪',c:'+46',n:'Sweden'},
+        {f:'🇨🇭',c:'+41',n:'Switzerland'},{f:'🇸🇾',c:'+963',n:'Syria'},{f:'🇹🇼',c:'+886',n:'Taiwan'},{f:'🇹🇯',c:'+992',n:'Tajikistan'},
+        {f:'🇹🇿',c:'+255',n:'Tanzania'},{f:'🇹🇭',c:'+66',n:'Thailand'},{f:'🇹🇬',c:'+228',n:'Togo'},{f:'🇹🇰',c:'+690',n:'Tokelau'},
+        {f:'🇹🇴',c:'+676',n:'Tonga'},{f:'🇹🇹',c:'+1-868',n:'Trinidad and Tobago'},{f:'🇹🇳',c:'+216',n:'Tunisia'},{f:'🇹🇷',c:'+90',n:'Turkey'},
+        {f:'🇹🇲',c:'+993',n:'Turkmenistan'},{f:'🇹🇨',c:'+1-649',n:'Turks and Caicos Islands'},{f:'🇹🇻',c:'+688',n:'Tuvalu'},{f:'🇻🇮',c:'+1-340',n:'U.S. Virgin Islands'},
+        {f:'🇺🇬',c:'+256',n:'Uganda'},{f:'🇺🇦',c:'+380',n:'Ukraine'},{f:'🇦🇪',c:'+971',n:'United Arab Emirates'},{f:'🇺🇾',c:'+598',n:'Uruguay'},
+        {f:'🇺🇿',c:'+998',n:'Uzbekistan'},{f:'🇻🇺',c:'+678',n:'Vanuatu'},{f:'🇻🇦',c:'+379',n:'Vatican'},{f:'🇻🇪',c:'+58',n:'Venezuela'},
+        {f:'🇻🇳',c:'+84',n:'Vietnam'},{f:'🇼🇫',c:'+681',n:'Wallis and Futuna'},{f:'🇪🇭',c:'+212',n:'Western Sahara'},{f:'🇾🇪',c:'+967',n:'Yemen'},
+        {f:'🇿🇲',c:'+260',n:'Zambia'},{f:'🇿🇼',c:'+263',n:'Zimbabwe'}
+    ];
+
+    // ══════════════════════════════════════════
+    //   SUPABASE CONFIGURATION
+    // ══════════════════════════════════════════
+    const SUPABASE_URL    = 'https://eftexnivgkchhrulryan.supabase.co';
+    const SUPABASE_KEY    = 'sb_publishable_PTpRBa91vJXaLpV6Ku29bQ_tz33JHRD';
+    const STORAGE_BUCKET  = 'documents-identity';
+
+    const { createClient } = supabase;
+    const supabaseClient   = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function uploadFileToSupabase(file, fieldName, workerName) {
+        if (!file || file.size === 0) return null;
+        const docLabels = {
+            file_passport:'passport', file_brp:'brp-card', file_visa:'visa',
+            file_forklift_license:'forklift-license', file_cscs_card:'cscs-card',
+            file_dbs_certificate:'dbs-certificate', file_care_training:'care-training',
+            file_proof_of_address:'proof-of-address', file_bank_statement:'bank-statement',
+            file_ni_document:'ni-document', file_right_to_work:'right-to-work',
+        };
+        const ext      = file.name.split('.').pop().toLowerCase();
+        const docLabel = docLabels[fieldName] || fieldName.replace(/^file_/,'').replace(/_/g,'-');
+        const safeName = (workerName||'worker').toLowerCase().replace(/[^a-z0-9]/g,'');
+        const uniqueId = Date.now();
+        const fileName = `${docLabel}.${safeName}.${uniqueId}.${ext}`;
+        const filePath = `${fieldName}/${fileName}`;
+
+        const { data, error } = await supabaseClient
+            .storage
+            .from(STORAGE_BUCKET)
+            .upload(filePath, file, { cacheControl:'3600', upsert:false, contentType: file.type || 'application/octet-stream' });
+        if (error) throw new Error(`Failed to upload ${fieldName}: ${error.message}`);
+        return data.path;
+    }
+
+    // ══════════════════════════════════════════
+    //   DOM READY
+    // ══════════════════════════════════════════
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // Country code dropdown
+        const countrySelect = document.getElementById('countryCodeSelect');
+        countryData.forEach(country => {
+            const opt = document.createElement('option');
+            opt.value = country.c;
+            opt.textContent = `${country.n} ${country.f} ${country.c}`;
+            if (country.c === '+44' && country.n === 'United Kingdom') opt.selected = false;
+            countrySelect.appendChild(opt);
+        });
+
+        // Nav scroll effect
+        const hdr = document.getElementById('mainHeaderBlock');
+        window.addEventListener('scroll', () => {
+            hdr.classList.toggle('scrolled', window.scrollY > 10);
+        }, { passive: true });
+
+        // Mobile menu
+        const btn   = document.getElementById('mobile-menu-button');
+        const menu  = document.getElementById('mobile-menu');
+        const iMenu = document.getElementById('icon-menu');
+        const iX    = document.getElementById('icon-close');
+        if (btn && menu) {
+            btn.addEventListener('click', () => {
+                const open = menu.classList.toggle('hidden');
+                iMenu.classList.toggle('hidden', !open);
+                iMenu.classList.toggle('block', open);
+                iX.classList.toggle('hidden', open);
+                iX.classList.toggle('block', !open);
+            });
+            menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+                menu.classList.add('hidden');
+                iMenu.classList.remove('hidden'); iMenu.classList.add('block');
+                iX.classList.add('hidden'); iX.classList.remove('block');
+            }));
+        }
+
+        // Progress bar
+        const form = document.getElementById('registrationForm');
+        const updateProgress = () => {
+            const required = form.querySelectorAll('[required]');
+            const filled   = [...required].filter(el => {
+                if (el.type === 'radio' || el.type === 'checkbox') return el.checked;
+                return el.value.trim() !== '';
+            });
+            const pct = required.length ? Math.round((filled.length / required.length) * 100) : 0;
+            document.getElementById('formProgress').style.width = pct + '%';
+        };
+        form.addEventListener('input', updateProgress);
+        form.addEventListener('change', updateProgress);
+
+        // RTW Toggle
+        document.getElementById('nationality_status').addEventListener('change', e => {
+            const isUK = e.target.value === 'uk-irish';
+            document.getElementById('rtw-uk-block').classList.toggle('hidden', !isUK);
+            document.getElementById('rtw-non-uk-block').classList.toggle('hidden', isUK);
+            document.getElementById('file_passport').toggleAttribute('required', isUK);
+            document.getElementById('evisa_share_code').toggleAttribute('required', !isUK);
+            document.getElementById('evisa_dob_confirm').toggleAttribute('required', !isUK);
+        });
+
+        // Compliance toggles
+        const setupToggle = (chkId, blkId, cls) => {
+            document.getElementById(chkId).addEventListener('change', e => {
+                document.getElementById(blkId).classList.toggle('hidden', !e.target.checked);
+                document.getElementById(blkId).querySelectorAll(`.${cls}`).forEach(f => {
+                    e.target.checked ? f.setAttribute('required','true') : (f.removeAttribute('required'), f.value = '');
+                });
+            });
+        };
+        setupToggle('niche_forklift',      'compliance-forklift',      'flt-field');
+        setupToggle('niche_construction',  'compliance-construction',  'construction-field');
+        setupToggle('niche_care',          'compliance-care',          'care-field');
+
+        // Fitness & Conviction toggles
+        document.querySelectorAll('input[name="fitness_to_work"]').forEach(r => r.addEventListener('change', () => {
+            const req = document.querySelector('input[name="fitness_to_work"]:checked')?.value === 'Fit with Adjustments';
+            document.getElementById('adjustment-notes-block').classList.toggle('hidden', !req);
+            document.getElementById('reasonable_adjustments_detail').toggleAttribute('required', req);
+        }));
+        document.querySelectorAll('input[name="criminal_conviction"]').forEach(r => r.addEventListener('change', () => {
+            const req = document.querySelector('input[name="criminal_conviction"]:checked')?.value === 'Yes';
+            document.getElementById('conviction-detail-block').classList.toggle('hidden', !req);
+            document.getElementById('conviction_details').toggleAttribute('required', req);
+        }));
+
+        // Transport sub-options
+        const handleTransport = () => {
+            const isOwner    = document.getElementById('trans_owner').checked;
+            const isNonOwner = document.getElementById('trans_non_owner').checked;
+            document.getElementById('sub-owner-block').classList.toggle('hidden', !isOwner);
+            document.getElementById('sub-non-owner-block').classList.toggle('hidden', !isNonOwner);
+            document.querySelectorAll('.owner-sub-field').forEach(f =>
+                isOwner ? f.setAttribute('required','true') : (f.removeAttribute('required'), f.checked = false));
+            document.querySelectorAll('.non-owner-sub-field').forEach(f =>
+                isNonOwner ? f.setAttribute('required','true') : (f.removeAttribute('required'), f.checked = false));
+        };
+        document.getElementById('trans_owner').addEventListener('change', handleTransport);
+        document.getElementById('trans_non_owner').addEventListener('change', handleTransport);
+
+        // ══════════════════════════════════════
+        //   MODAL & FORM SUBMISSION
+        // ══════════════════════════════════════
+        const modal        = document.getElementById('submissionModal');
+        const loadingState = document.getElementById('modalLoadingState');
+        const successState = document.getElementById('modalSuccessState');
+        const errorState   = document.getElementById('modalErrorState');
+        const loadingText  = document.getElementById('loadingText');
+        const errorText    = document.getElementById('errorText');
+
+        const showModal = (state) => {
+            modal.classList.remove('hidden');
+            loadingState.classList.toggle('hidden', state !== 'loading');
+            successState.classList.toggle('hidden', state !== 'success');
+            errorState.classList.toggle('hidden',   state !== 'error');
+        };
+
+        document.getElementById('closeSuccessBtn').addEventListener('click', () => {
+            modal.classList.add('hidden'); form.reset();
+            document.getElementById('formProgress').style.width = '0%';
+        });
+        document.getElementById('closeErrorBtn').addEventListener('click', () => modal.classList.add('hidden'));
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showModal('loading');
+
+            try {
+                const formData = new FormData(form);
+                const payload  = {};
+                const fileFields = {};
+
+                for (const [key, value] of formData.entries()) {
+                    if (value instanceof File) {
+                        if (value.name && value.size > 0 && !fileFields[key]) fileFields[key] = value;
+                    } else {
+                        if (payload.hasOwnProperty(key)) {
+                            payload[key] = Array.isArray(payload[key]) ? [...payload[key], value] : [payload[key], value];
+                        } else {
+                            payload[key] = value;
+                        }
+                    }
+                }
+
+                const fileKeys = Object.keys(fileFields);
+                loadingText.innerText = `Uploading Documents (0/${fileKeys.length})...`;
+
+                const fileUrls = {};
+                let uploadCount = 0;
+                const workerName = `${payload.firstName||''}${payload.lastName||''}`;
+
+                for (const fieldName of fileKeys) {
+                    const path = await uploadFileToSupabase(fileFields[fieldName], fieldName, workerName);
+                    if (path) fileUrls[fieldName] = path;
+                    uploadCount++;
+                    loadingText.innerText = `Uploading Documents (${uploadCount}/${fileKeys.length})...`;
+                }
+
+                loadingText.innerText = 'Finalizing Registration...';
+
+                const { error: insertError } = await supabaseClient
+                    .from('workers')
+                    .insert([{
+                        first_name: payload.firstName||null, surname: payload.lastName||null, dob: payload.dob||null,
+                        ni_number: payload.ni_number||null, gender: payload.gender||null, ethnicity: payload.ethnicity||null,
+                        address_line: payload.address_line||null, city: payload.city||null, postcode: payload.postcode||null,
+                        country_code: payload.countryCode||null, mobile_phone: payload.mobile_phone||null, email: payload.email||null,
+                        whatsapp_agreement: payload.whatsapp_agreement||'No', emergency_contact_name: payload.emergency_contact_name||null,
+                        emergency_contact_relationship: payload.emergency_contact_relationship||null, emergency_contact_phone: payload.emergency_contact_phone||null,
+                        nationality_status: payload.nationality_status||null, evisa_share_code: payload.evisa_share_code||null, evisa_dob_confirm: payload.evisa_dob_confirm||null,
+                        niche_logistics: payload.niche_logistics||null, niche_forklift: payload.niche_forklift||null, niche_construction: payload.niche_construction||null, niche_care: payload.niche_care||null,
+                        skill_logistics_picker: payload.skill_logistics_picker||null, skill_logistics_loader: payload.skill_logistics_loader||null, skill_logistics_prod: payload.skill_logistics_prod||null,
+                        ppe_kit_confirmation: payload.ppe_kit_confirmation||null, forklift_type: payload.forklift_type||null, cscs_number: payload.cscs_number||null, cscs_card_type: payload.cscs_card_type||null,
+                        dbs_number: payload.dbs_number||null, dbs_update_service: payload.dbs_update_service||null,
+                        logistics_transport_status: payload.logistics_transport_status||null, vehicle_owner_option: payload.vehicle_owner_option||null, non_owner_option: payload.non_owner_option||null,
+                        preferred_shift_pattern: payload.preferred_shift_pattern||null, emergency_shift_availability: payload.emergency_shift_availability||null,
+                        bank_account_name: payload.bank_account_name||null, bank_sort_code: payload.bank_sort_code||null, bank_account_number: payload.bank_account_number||null, hmrc_starter_declaration: payload.hmrc_starter_declaration||null,
+                        availability_start_date: payload.availability_start_date||null, travel_radius: payload.travel_radius||null, fitness_to_work: payload.fitness_to_work||null,
+                        reasonable_adjustments_detail: payload.reasonable_adjustments_detail||null, criminal_conviction: payload.criminal_conviction||null, conviction_details: payload.conviction_details||null,
+                        gdpr_consent: payload.consent||null, file_urls: fileUrls
+                    }]);
+
+                if (insertError) {
+                    if (insertError.code === '23505') throw new Error('An application with this National Insurance Number or Email already exists.');
+                    throw new Error(insertError.message);
+                }
+
+                showModal('success');
+
+            } catch (error) {
+                errorText.innerText = error.message || 'Please check your connection and try again.';
+                showModal('error');
+            }
+        });
+
+    }); // DOMContentLoaded
+</script>
+</body>
+</html>

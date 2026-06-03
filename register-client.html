@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Company Registration & Staffing Request | WELLDONE GROUP</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            900: '#0B1120',
+                            800: '#1e293b',
+                            500: '#ea580c',
+                            50: '#f8fafc',
+                        }
+                    },
+                    boxShadow: {
+                        'saas': '0 10px 40px -10px rgba(0,0,0,0.08)',
+                        'glow': '0 0 20px rgba(234, 88, 12, 0.4)',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            background-color: #ea580c;
+            margin-left: 4px;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        /* Modern File Input Styling */
+        input[type=file]::file-selector-button {
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        input[type=file]::file-selector-button:hover {
+            background-color: #e2e8f0;
+            color: #ea580c;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col w-full overflow-x-hidden relative">
+
+    <div id="navigationWrapper" class="fixed top-0 inset-x-0 z-50 w-full shadow-2xl">
+        <header id="mainHeaderBlock" class="w-full bg-brand-900/50 backdrop-blur-md border-b border-transparent transition-all duration-300 relative z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+                <div class="flex justify-between items-center h-16 sm:h-20 w-full">
+                    <div class="flex items-center z-20">
+                        <a href="index.html" class="hover:opacity-80 transition-opacity flex items-center">
+                            <img src="logo/logo.png" onerror="this.onerror=null; this.src='https://placehold.co/120x40/ea580c/ffffff?text=LOGO';" alt="WELLDONE" class="h-8 sm:h-10 w-auto">
+                        </a>
+                    </div>
+                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 whitespace-nowrap">
+                        <a href="index.html" class="font-extrabold text-[15px] sm:text-lg md:text-xl lg:text-2xl tracking-tight uppercase hover:opacity-80 transition-opacity">
+                            <span class="text-white">WELLDONE</span> <span class="text-brand-500">GROUP</span>
+                        </a>
+                    </div>
+                    <div class="flex items-center justify-end z-20">
+                        <div class="hidden lg:flex space-x-6 text-sm font-semibold text-slate-300 items-center mr-6">
+                            <a href="index.html" class="hover:text-white transition-colors">Home</a>
+                            <a href="register-worker.html" class="px-5 py-2.5 bg-brand-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow-glow transition-all">Apply to Work</a>
+                        </div>
+                        <a href="login.html" id="navAuthBtn" class="hidden sm:inline-flex items-center justify-center px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-bold text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-sm hover:bg-brand-500 hover:border-brand-500 transition-all">
+                            <svg class="w-4 h-4 mr-2 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                            <span>Portal Login</span>
+                        </a>
+                        <button id="mobile-menu-button" class="lg:hidden text-slate-300 hover:text-white focus:outline-none ml-3 relative transition-all">
+                            <svg id="icon-menu" class="w-7 h-7 block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            <svg id="icon-close" class="w-7 h-7 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div id="mobile-menu" class="hidden lg:hidden absolute top-full w-full left-0 bg-brand-900 border-b border-slate-700 shadow-2xl z-30">
+            <div class="px-4 pt-2 pb-6 space-y-2 max-h-[80vh] overflow-y-auto">
+                <a href="index.html" class="block px-4 py-3 rounded-lg text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Home</a>
+                <a href="register-worker.html" class="block px-4 py-3 rounded-lg text-base font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Apply to Work</a>
+                <a href="login.html" class="block px-4 py-3 rounded-lg text-base font-bold text-white bg-brand-500 hover:bg-orange-600 transition-colors mt-4 text-center">Portal Login</a>
+            </div>
+        </div>
+    </div>
+
+    <main class="flex-grow pt-28 pb-12 px-4 sm:px-6 lg:pt-36">
+        <div class="max-w-4xl mx-auto">
+            
+            <div class="text-center mb-10 min-h-[120px]">
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight sm:text-4xl">
+                    Partner with WELLDONE for <br class="sm:hidden">
+                    <span id="typewriter" class="text-brand-500"></span><span class="cursor">&nbsp;</span>
+                </h1>
+                <p class="mt-4 text-slate-500 text-lg max-w-2xl mx-auto">Register your site for rapid-response workforce supply. We specialize in solving 05:00 AM no-shows across Wearside logistics and construction sites.</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+                <form id="corporateRegistrationForm" method="POST" enctype="multipart/form-data" class="divide-y divide-slate-100">
+                    
+                    <div class="p-6 sm:p-10">
+                        <div class="flex items-center mb-6">
+                            <div class="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center font-bold text-sm mr-3">1</div>
+                            <h2 class="text-xl font-bold text-slate-900">Corporate Identity & Business Verification</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Registered Company Name *</label>
+                                <input type="text" name="registered_company_name" required placeholder="e.g. WELLDONE GROUP LTD" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                                <p class="text-[11px] text-slate-400 mt-1">Official legal entity name as registered with Companies House.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Companies House Registration Number (CRN)</label>
+                                <input type="text" name="companies_house_crn" maxlength="8" placeholder="e.g. 12345678" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm tracking-wider uppercase">
+                                <p class="text-[11px] text-slate-400 mt-1">8-digit reference used for background and credit metrics.</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Trading Name / Brand Name</label>
+                                <input type="text" name="trading_name" placeholder="e.g. WellDone Logistics" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                                <p class="text-[11px] text-slate-400 mt-1">Provide if your operational brand differs from legal registry.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Registered Office Address *</label>
+                                <input type="text" name="registered_office_address" required placeholder="Address, City, Postcode" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                                <p class="text-[11px] text-slate-400 mt-1">Official headquarters profile registered with HMRC.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 sm:p-10 bg-slate-50/30">
+                        <div class="flex items-center mb-6">
+                            <div class="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center font-bold text-sm mr-3">2</div>
+                            <h2 class="text-xl font-bold text-slate-900">Authorized Primary Contact (The Account Owner)</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Authorized Representative Full Name *</label>
+                                <input type="text" name="representative_name" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Job Title / Role *</label>
+                                <input type="text" name="representative_job_title" required placeholder="e.g. Logistics Manager, Site Supervisor" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Direct Corporate Email Address *</label>
+                                <input type="email" id="corporate_email" name="corporate_email" required placeholder="name@yourcompany.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                                <div id="email_warning" class="hidden mt-1.5 text-xs text-red-500 font-semibold flex items-center">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                    Please supply a secure business domain. Free providers (Gmail, Yahoo, etc.) are flagged.
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Direct Contact Phone Number *</label>
+                                <input type="tel" name="representative_phone" required placeholder="Direct line or mobile number" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 sm:p-10">
+                        <div class="flex items-center mb-6">
+                            <div class="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center font-bold text-sm mr-3">3</div>
+                            <h2 class="text-xl font-bold text-slate-900">Operational Site Deployment Data</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Primary Site Operations Address *</label>
+                                <input type="text" name="site_deployment_address" required placeholder="Physical deployment environment location" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Site Postcode *</label>
+                                <input type="text" name="site_postcode" required placeholder="e.g. SR5 3XB" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm uppercase tracking-wider">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">On-Site Supervisor / Reporting Contact Name</label>
+                                <input type="text" name="site_supervisor_name" placeholder="Defaults to account owner if blank" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">On-Site Supervisor Contact Number</label>
+                                <input type="text" name="site_supervisor_phone" placeholder="Urgent check-in baseline query line" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 sm:p-10 bg-slate-50/30">
+                        <div class="flex items-center mb-6">
+                            <div class="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center font-bold text-sm mr-3">4</div>
+                            <h2 class="text-xl font-bold text-slate-900">Accounts Payable & Billing Parameters</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">Invoicing / Accounts Payable Email Address *</label>
+                                    <input type="email" name="billing_email" required placeholder="finance@yourcompany.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">Estimated Weekly Labour Usage</label>
+                                    <select name="estimated_usage" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white outline-none transition-all bg-white text-sm text-slate-700 font-medium">
+                                        <option value="Less than 50 hours">Less than 50 hours per week</option>
+                                        <option value="50-200 hours">50 – 200 operational hours per week</option>
+                                        <option value="200+ hours">200+ massive headcount hours per week</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="bg-white border border-slate-200 p-5 rounded-xl shadow-sm h-fit">
+                                <span class="block text-sm font-bold text-slate-800 mb-2">Purchase Order (PO) Number Requirement</span>
+                                <p class="text-xs text-slate-400 leading-relaxed mb-4">Does your corporate accounts department mandate a recorded PO attached to structural weekly tracking invoices?</p>
+                                <div class="flex items-center space-x-6">
+                                    <label class="flex items-center space-x-2.5 cursor-pointer text-sm font-semibold text-slate-700">
+                                        <input type="radio" name="po_requirement" value="Yes" required class="w-4 h-4 text-brand-500 focus:ring-brand-500 border-slate-300">
+                                        <span>Yes, PO Mandatory</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2.5 cursor-pointer text-sm font-semibold text-slate-700">
+                                        <input type="radio" name="po_requirement" value="No" class="w-4 h-4 text-brand-500 focus:ring-brand-500 border-slate-300" checked>
+                                        <span>No, Process Without PO</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 sm:p-10">
+                        <div class="flex items-center mb-6">
+                            <div class="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center font-bold text-sm mr-3">5</div>
+                            <h2 class="text-xl font-bold text-slate-900">Supporting Documents <span class="text-slate-400 font-normal text-base">(Optional)</span></h2>
+                        </div>
+                        <p class="text-sm text-slate-500 mb-6">Upload any supporting documents to expedite onboarding — e.g. insurance certificates, health & safety policies, site induction packs. Max 7MB per file.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Employer Liability Insurance Certificate</label>
+                                <input type="file" name="file_employer_liability" accept=".pdf,.jpg,.jpeg,.png,.webp" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Health & Safety Policy Document</label>
+                                <input type="file" name="file_health_safety" accept=".pdf,.jpg,.jpeg,.png,.webp" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Site Induction / Risk Assessment Pack</label>
+                                <input type="file" name="file_site_induction" accept=".pdf,.jpg,.jpeg,.png,.webp" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Other Supporting Document</label>
+                                <input type="file" name="file_other" accept=".pdf,.jpg,.jpeg,.png,.webp" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 sm:p-10 bg-white flex flex-col sm:flex-row justify-between items-center">
+                        <p class="text-sm text-slate-400 font-medium mb-4 sm:mb-0">Your corporate validation manager will establish terms immediately upon tracking confirmation.</p>
+                        <button type="submit" id="submitBtn" class="w-full sm:w-auto bg-brand-900 hover:bg-slate-800 text-white text-lg font-bold py-3.5 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center">
+                            Register & Verify Organization
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-brand-900 text-slate-400 py-12 border-t border-slate-800 text-center mt-auto">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-xs sm:text-sm font-semibold tracking-wider text-slate-500 flex flex-col sm:block gap-2 sm:gap-0">
+                <span>&copy; 2026 WELLDONE GROUP</span>
+                <span class="hidden sm:inline"> | </span>
+                <span>5 Booth St, Millfield, Sunderland, SR4 6HT, England</span>
+            </div>
+        </div>
+    </footer>
+
+    <div id="submissionModal" class="fixed inset-0 z-[100] hidden bg-brand-900/80 backdrop-blur-sm flex items-center justify-center px-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center relative">
+            
+            <img src="logo/logo.png" onerror="this.onerror=null; this.src='https://placehold.co/120x40/ea580c/ffffff?text=LOGO';" alt="WELLDONE" class="h-10 mx-auto mb-8">
+            
+            <div id="modalLoadingState" class="block">
+                <div class="inline-block relative w-16 h-16 mb-4">
+                    <svg class="animate-spin text-brand-500 w-16 h-16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-extrabold text-slate-900 mb-2" id="loadingText">Connecting...</h3>
+                <p class="text-slate-500 text-sm">Please do not close or refresh this window.</p>
+            </div>
+
+            <div id="modalSuccessState" class="hidden">
+                <div class="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-500 mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h3 class="text-2xl font-extrabold text-slate-900 mb-3">Registration Received</h3>
+                <p class="text-slate-600 text-sm mb-8 leading-relaxed">Thank you for registering. An admin will review your corporate details and reach out shortly to establish your service terms.</p>
+                <button id="closeSuccessBtn" class="w-full px-6 py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-green-500/30">Finish</button>
+            </div>
+            
+            <div id="modalErrorState" class="hidden">
+                 <div class="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </div>
+                <h3 class="text-xl font-extrabold text-slate-900 mb-2">Submission Failed</h3>
+                <p class="text-red-600 text-sm mb-8 font-medium" id="errorText">An error occurred.</p>
+                <button id="closeErrorBtn" class="w-full px-6 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl transition-all">Go Back & Try Again</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  SUPABASE CONFIG 
+        // ============================================================
+        const SUPABASE_URL    = 'https://eftexnivgkchhrulryan.supabase.co';
+        const SUPABASE_ANON   = 'sb_publishable_PTpRBa91vJXaLpV6Ku29bQ_tz33JHRD';
+        const STORAGE_BUCKET  = 'documents-company';
+
+        const { createClient } = supabase;
+        const supabaseClient   = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+        // ============================================================
+        //  FILE UPLOAD — renames files to companyname_doctype_timestamp
+        // ============================================================
+        async function uploadFileToSupabase(file, fieldName, companySlug) {
+            if (!file || file.size === 0) return null;
+
+            const docLabels = {
+                file_employer_liability: 'employer-liability-insurance',
+                file_health_safety:      'health-safety-policy',
+                file_site_induction:     'site-induction-pack',
+                file_other:              'supporting-document',
+            };
+
+            const ext       = file.name.split('.').pop().toLowerCase();
+            const docLabel  = docLabels[fieldName] || fieldName.replace(/^file_/, '').replace(/_/g, '-');
+            const safeName  = (companySlug || 'company').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const filePath  = `${fieldName}/${safeName}_${docLabel}_${Date.now()}.${ext}`;
+
+            const { data, error } = await supabaseClient
+                .storage
+                .from(STORAGE_BUCKET)
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: file.type || 'application/octet-stream'
+                });
+
+            if (error) {
+                console.error(`Storage upload error [${fieldName}]:`, error.message);
+                throw new Error(`Failed to upload ${fieldName}: ${error.message}`);
+            }
+            return data.path;
+        }
+
+        // ============================================================
+        //  INTERACTION & MODAL UI LOGIC
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Scroll Header
+            const mainHeaderBlock = document.getElementById('mainHeaderBlock');
+            window.addEventListener('scroll', () => {
+                const y = Math.max(window.scrollY || document.documentElement.scrollTop, 0);
+                if (y <= 10) {
+                    mainHeaderBlock.classList.remove('bg-brand-900', 'border-slate-800');
+                    mainHeaderBlock.classList.add('bg-brand-900/50', 'backdrop-blur-md', 'border-transparent');
+                } else {
+                    mainHeaderBlock.classList.remove('bg-brand-900/50', 'backdrop-blur-md', 'border-transparent');
+                    mainHeaderBlock.classList.add('bg-brand-900', 'border-slate-800');
+                }
+            }, { passive: true });
+
+            // Mobile Menu
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu       = document.getElementById('mobile-menu');
+            const iconMenu         = document.getElementById('icon-menu');
+            const iconClose        = document.getElementById('icon-close');
+
+            if(mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', () => {
+                    const isHidden = mobileMenu.classList.contains('hidden');
+                    if (isHidden) {
+                        mobileMenu.classList.remove('hidden');
+                        mobileMenu.classList.add('block');
+                        iconMenu.classList.add('hidden');
+                        iconClose.classList.remove('hidden');
+                        mainHeaderBlock.classList.remove('bg-brand-900/50', 'backdrop-blur-md', 'border-transparent');
+                        mainHeaderBlock.classList.add('bg-brand-900', 'border-slate-800');
+                    } else {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenu.classList.remove('block');
+                        iconClose.classList.add('hidden');
+                        iconMenu.classList.remove('hidden');
+                        if (window.scrollY <= 10) {
+                            mainHeaderBlock.classList.remove('bg-brand-900', 'border-slate-800');
+                            mainHeaderBlock.classList.add('bg-brand-900/50', 'backdrop-blur-md', 'border-transparent');
+                        }
+                    }
+                });
+
+                mobileMenu.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        mobileMenu.classList.add('hidden');
+                        iconClose.classList.add('hidden');
+                        iconMenu.classList.remove('hidden');
+                    });
+                });
+            }
+
+            // Corporate email domain filter
+            const corporateEmailInput = document.getElementById('corporate_email');
+            const emailWarning        = document.getElementById('email_warning');
+            const prohibitedDomains   = ['gmail.com','yahoo.com','yahoo.co.uk','hotmail.com','hotmail.co.uk','outlook.com','live.co.uk','aol.com','icloud.com'];
+
+            corporateEmailInput.addEventListener('input', () => {
+                const domain = corporateEmailInput.value.trim().toLowerCase().split('@')[1] || '';
+                emailWarning.classList.toggle('hidden', !prohibitedDomains.includes(domain));
+            });
+
+            // File size validation (7MB)
+            const maxFileSize = 7 * 1024 * 1024;
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.addEventListener('change', function () {
+                    if (this.files && this.files[0] && this.files[0].size > maxFileSize) {
+                        alert('File exceeds the 7MB limit. Please choose a smaller file.');
+                        this.value = '';
+                    }
+                });
+            });
+
+            // Typewriter
+            const typewriterElement = document.getElementById('typewriter');
+            const phrases = ['On-Demand Talent Pooling', 'Instant Crew Scalability', 'Certified Specialist Access'];
+            let phraseIdx = 0, charIdx = 0, isDeleting = false, typingSpeed = 100;
+
+            function type() {
+                if(!typewriterElement) return;
+                const currentPhrase = phrases[phraseIdx];
+                if (isDeleting) {
+                    typewriterElement.textContent = currentPhrase.substring(0, charIdx - 1);
+                    charIdx--;
+                    typingSpeed = 50;
+                } else {
+                    typewriterElement.textContent = currentPhrase.substring(0, charIdx + 1);
+                    charIdx++;
+                    typingSpeed = 100;
+                }
+                if (!isDeleting && charIdx === currentPhrase.length) { isDeleting = true; typingSpeed = 2000; }
+                else if (isDeleting && charIdx === 0) { isDeleting = false; phraseIdx = (phraseIdx + 1) % phrases.length; typingSpeed = 500; }
+                setTimeout(type, typingSpeed);
+            }
+            type();
+
+            // ============================================================
+            //  MODAL & FORM SUBMISSION HANDLING
+            // ============================================================
+            const form = document.getElementById('corporateRegistrationForm');
+            const modal = document.getElementById('submissionModal');
+            const loadingState = document.getElementById('modalLoadingState');
+            const successState = document.getElementById('modalSuccessState');
+            const errorState = document.getElementById('modalErrorState');
+            const loadingText = document.getElementById('loadingText');
+            const errorText = document.getElementById('errorText');
+
+            const showModal = (state) => {
+                modal.classList.remove('hidden');
+                loadingState.classList.toggle('hidden', state !== 'loading');
+                successState.classList.toggle('hidden', state !== 'success');
+                errorState.classList.toggle('hidden', state !== 'error');
+            };
+
+            // Close Modal Handlers
+            document.getElementById('closeSuccessBtn').addEventListener('click', () => {
+                modal.classList.add('hidden');
+                form.reset();
+            });
+            document.getElementById('closeErrorBtn').addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                showModal('loading');
+
+                try {
+                    const formData   = new FormData(this);
+                    const payload    = {};
+                    const fileFields = {};
+
+                    for (const [key, value] of formData.entries()) {
+                        if (value instanceof File) {
+                            if (value.name && value.size > 0) fileFields[key] = value;
+                        } else {
+                            payload[key] = value;
+                        }
+                    }
+
+                    // Build company slug for file naming e.g. "welldonegroup"
+                    const companySlug = (payload.registered_company_name || payload.trading_name || 'company');
+
+                    // Upload files
+                    const fileUrls  = {};
+                    const fileKeys  = Object.keys(fileFields);
+                    let uploadCount = 0;
+
+                    loadingText.innerText = `Uploading Documents (0/${fileKeys.length})...`;
+
+                    for (const fieldName of fileKeys) {
+                        const storagePath = await uploadFileToSupabase(fileFields[fieldName], fieldName, companySlug);
+                        if (storagePath) fileUrls[fieldName] = storagePath;
+                        uploadCount++;
+                        loadingText.innerText = `Uploading Documents (${uploadCount}/${fileKeys.length})...`;
+                    }
+
+                    // Insert into companies table
+                    loadingText.innerText = `Saving Registration...`;
+
+                    const { error: insertError } = await supabaseClient
+                        .from('companies')
+                        .insert([{
+                            registered_company_name:   payload.registered_company_name   || null,
+                            companies_house_crn:        payload.companies_house_crn        || null,
+                            trading_name:               payload.trading_name               || null,
+                            registered_office_address:  payload.registered_office_address  || null,
+                            representative_name:        payload.representative_name        || null,
+                            representative_job_title:   payload.representative_job_title   || null,
+                            corporate_email:            payload.corporate_email            || null,
+                            representative_phone:       payload.representative_phone       || null,
+                            site_deployment_address:    payload.site_deployment_address    || null,
+                            site_postcode:              payload.site_postcode              || null,
+                            site_supervisor_name:       payload.site_supervisor_name       || null,
+                            site_supervisor_phone:      payload.site_supervisor_phone      || null,
+                            billing_email:              payload.billing_email              || null,
+                            estimated_usage:            payload.estimated_usage            || null,
+                            po_requirement:             payload.po_requirement             || 'No',
+                            file_urls:                  fileUrls
+                        }]);
+
+                    if (insertError) {
+                        // Catch unique violation error (e.g. duplicate email or CRN)
+                        if (insertError.code === '23505') {
+                            throw new Error("A company with this Registration Number or Email already exists in our system.");
+                        } else {
+                            throw new Error(insertError.message);
+                        }
+                    }
+
+                    showModal('success');
+
+                } catch (err) {
+                    errorText.innerText = err.message || 'Please check your connection and try again.';
+                    showModal('error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

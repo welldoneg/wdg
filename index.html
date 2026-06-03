@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>WELLDONE GROUP | Workforce Operating System</title>
+
+    <link href="dist/output.css" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* ===================================================
+           BASE
+        =================================================== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --brand-900: #0B1120;
+            --brand-800: #1e293b;
+            --brand-500: #ea580c;
+            --brand-50:  #f8fafc;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-600: #475569;
+            --slate-500: #64748b;
+            --slate-400: #94a3b8;
+            --slate-300: #cbd5e1;
+            --slate-200: #e2e8f0;
+            --slate-100: #f1f5f9;
+            --slate-50:  #f8fafc;
+            --white:     #ffffff;
+            --shadow-saas: 0 10px 40px -10px rgba(0,0,0,0.08);
+            --shadow-glow: 0 0 20px rgba(234,88,12,0.4);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--brand-50);
+            color: var(--slate-800);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        img { max-width: 100%; display: block; }
+
+        /* ===================================================
+           UTILITIES
+        =================================================== */
+        .container {
+            max-width: 80rem;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        @media (min-width: 640px)  { .container { padding-left: 1.5rem; padding-right: 1.5rem; } }
+        @media (min-width: 1024px) { .container { padding-left: 2rem;   padding-right: 2rem;   } }
+
+        /* ===================================================
+           ANIMATIONS
+        =================================================== */
+        @keyframes ping {
+            75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .5; }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-ping  { animation: ping  1s cubic-bezier(0,0,0.2,1) infinite; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+        .animate-fade-in-up { animation: fadeInUp 0.7s ease both; }
+
+        /* ===================================================
+           STATUS BAR
+        =================================================== */
+        #statusBar {
+            background-color: var(--brand-500);
+            color: var(--white);
+            text-align: center;
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            z-index: 50;
+        }
+
+        @media (min-width: 640px) { #statusBar { font-size: 0.875rem; } }
+
+        .live-dot-wrapper {
+            position: relative;
+            display: inline-flex;
+            width: 0.75rem;
+            height: 0.75rem;
+            flex-shrink: 0;
+        }
+        .live-dot-ping {
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            background: var(--white);
+            opacity: 0.75;
+        }
+        .live-dot-core {
+            position: relative;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 9999px;
+            background: var(--white);
+        }
+
+        #statusBar .typewriter-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.125rem;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        /* ===================================================
+           HEADER
+        =================================================== */
+        #navigationWrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        #mainHeaderBlock {
+            width: 100%;
+            background-color: rgba(11,17,32,0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid transparent;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        #mainHeaderBlock.scrolled {
+            background-color: var(--brand-900);
+            border-color: var(--slate-800);
+            backdrop-filter: none;
+        }
+
+        .header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 4rem;
+            position: relative;
+        }
+        @media (min-width: 640px) { .header-inner { height: 5rem; } }
+
+        /* Brand */
+        .brand-logo { display: flex; align-items: center; z-index: 20; }
+        .brand-logo img { height: 2rem; width: auto; }
+        @media (min-width: 640px) { .brand-logo img { height: 2.5rem; } }
+
+        .brand-center {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            white-space: nowrap;
+            display: none;
+        }
+        @media (min-width: 768px) {
+            .brand-center { display: block; font-size: 1.25rem; }
+        }
+        @media (min-width: 1024px) { .brand-center { font-size: 1.5rem; } }
+
+        .brand-center-mobile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 0 0.5rem;
+            font-size: 1.0625rem;
+        }
+        @media (min-width: 768px) { .brand-center-mobile { display: none; } }
+
+        .brand-name { font-weight: 800; letter-spacing: -0.02em; text-transform: uppercase; }
+        .brand-name .white  { color: var(--white); }
+        .brand-name .orange { color: var(--brand-500); }
+
+        /* Nav right */
+        .nav-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            z-index: 20;
+        }
+
+        /* Desktop dropdown button */
+        #desktop-menu-btn {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.75rem;
+            color: var(--slate-300);
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+            margin-right: 0.75rem;
+        }
+        @media (min-width: 1024px) { #desktop-menu-btn { display: flex; } }
+        #desktop-menu-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.3);
+            color: var(--white);
+        }
+        #desktop-menu-btn svg { width: 1rem; height: 1rem; }
+
+        /* Desktop dropdown panel */
+        #desktop-dropdown {
+            position: absolute;
+            top: calc(100% + 0.75rem);
+            right: 0;
+            width: 16rem;
+            background: rgba(15,23,42,0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(51,65,85,0.6);
+            border-radius: 1rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            transform-origin: top right;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+            z-index: 50;
+        }
+        #desktop-dropdown.open {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+        .desktop-nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            color: var(--slate-300);
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: background 0.15s, color 0.15s;
+            text-align: left;
+        }
+        .desktop-nav-link:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+
+        .dropdown-divider { border: none; border-top: 1px solid rgba(51,65,85,0.5); margin: 0.5rem 0; }
+
+        .desktop-nav-link.apply {
+            background: rgba(234,88,12,0.1);
+            border: 1px solid rgba(234,88,12,0.2);
+            color: var(--white);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .desktop-nav-link.apply:hover { background: rgba(234,88,12,0.2); }
+
+        .desktop-nav-link.cta {
+            background: var(--brand-500);
+            color: var(--white);
+            font-weight: 700;
+            text-align: center;
+            box-shadow: var(--shadow-glow);
+        }
+        .desktop-nav-link.cta:hover { background: #c2410c; }
+
+        /* Login button */
+        #navAuthBtn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0.625rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--white);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 0.75rem;
+            transition: background 0.2s, border-color 0.2s;
+            gap: 0.5rem;
+        }
+        @media (min-width: 640px) { #navAuthBtn { display: flex; } }
+        #navAuthBtn:hover { background: var(--brand-500); border-color: var(--brand-500); }
+        #navAuthBtn svg { width: 1rem; height: 1rem; color: var(--brand-500); }
+        #navAuthBtn:hover svg { color: var(--white); }
+
+        /* Mobile menu button */
+        #mobile-menu-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 0.75rem;
+            color: var(--slate-300);
+            cursor: pointer;
+            margin-left: 0.75rem;
+            transition: color 0.2s, background 0.2s;
+        }
+        @media (min-width: 1024px) { #mobile-menu-button { display: none; } }
+        #mobile-menu-button:hover { color: var(--white); }
+        #mobile-menu-button svg { width: 1.5rem; height: 1.5rem; }
+
+        /* Mobile menu drawer */
+        #mobile-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: var(--brand-900);
+            border-bottom: 1px solid var(--slate-700);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            z-index: 30;
+        }
+        #mobile-menu.open { display: block; }
+
+        .mobile-menu-inner {
+            padding: 1rem 1rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .mobile-nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--slate-300);
+            transition: background 0.2s, color 0.2s;
+        }
+        .mobile-nav-link:hover { background: rgba(255,255,255,0.1); color: var(--white); }
+
+        .mobile-divider { border: none; border-top: 1px solid var(--slate-800); }
+
+        .mobile-nav-link.apply {
+            background: rgba(234,88,12,0.1);
+            border: 1px solid rgba(234,88,12,0.3);
+            color: var(--white);
+            text-align: center;
+            font-weight: 700;
+        }
+        .mobile-nav-link.cta {
+            background: var(--brand-500);
+            border-color: transparent;
+            color: var(--white);
+            font-weight: 700;
+            text-align: center;
+            box-shadow: var(--shadow-glow);
+        }
+        .mobile-nav-link.cta:hover { background: #c2410c; }
+        .mobile-nav-link.login {
+            background: var(--slate-800);
+            border: 1px solid var(--slate-700);
+            color: var(--white);
+            font-weight: 700;
+            text-align: center;
+        }
+        .mobile-nav-link.login:hover { background: var(--slate-700); }
+
+        /* ===================================================
+           HERO
+        =================================================== */
+        #hero {
+            position: relative;
+            padding-top: 11rem;
+            padding-bottom: 6rem;
+            overflow: hidden;
+            background-color: var(--brand-900);
+            background-image:
+                linear-gradient(to bottom, rgba(11,17,32,0.85), rgba(11,17,32,0.98)),
+                url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+        @media (min-width: 1024px) { #hero { padding-top: 14rem; padding-bottom: 10rem; } }
+
+        .hero-glow {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50rem;
+            height: 31.25rem;
+            background: var(--brand-500);
+            opacity: 0.3;
+            filter: blur(120px);
+            border-radius: 9999px;
+            pointer-events: none;
+        }
+
+        .hero-grid {
+            position: absolute;
+            inset: 0;
+            opacity: 0.4;
+            pointer-events: none;
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .hero-inner {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        @media (min-width: 1024px) {
+            .hero-inner { grid-template-columns: 1fr 1fr; gap: 4rem; }
+        }
+
+        /* Hero left */
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.625rem;
+            font-weight: 700;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fb923c;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            backdrop-filter: blur(4px);
+            box-shadow: var(--shadow-glow);
+            margin-bottom: 1.5rem;
+        }
+        @media (min-width: 640px) { .hero-badge { font-size: 0.75rem; } }
+
+        .hero-badge-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 9999px;
+            background: var(--brand-500);
+            flex-shrink: 0;
+        }
+
+        .hero-h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+        }
+        @media (min-width: 640px)  { .hero-h1 { font-size: 3rem; margin-bottom: 1.5rem; } }
+        @media (min-width: 1024px) { .hero-h1 { font-size: 3.75rem; } }
+
+        .hero-h1 .gradient {
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(to right, var(--brand-500), #fdba74);
+        }
+
+        .hero-desc {
+            font-size: 1rem;
+            color: var(--slate-300);
+            margin-bottom: 1.5rem;
+            line-height: 1.75;
+            font-weight: 300;
+        }
+        @media (min-width: 640px) { .hero-desc { font-size: 1.125rem; } }
+
+        .hero-box {
+            background: rgba(30,41,59,0.5);
+            backdrop-filter: blur(4px);
+            border: 1px solid var(--slate-700);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+            max-width: 36rem;
+        }
+        @media (min-width: 640px) { .hero-box { padding: 1.5rem; } }
+
+        .hero-box-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--brand-500);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero-box p {
+            color: var(--slate-300);
+            font-size: 0.875rem;
+        }
+
+        .hero-ctas {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        @media (min-width: 640px) { .hero-ctas { flex-direction: row; gap: 1rem; } }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--white);
+            background: var(--brand-500);
+            border: 1px solid transparent;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-glow);
+            transition: background 0.2s;
+            width: 100%;
+        }
+        @media (min-width: 640px) { .btn-primary { width: auto; padding: 1rem 2rem; font-size: 1.125rem; } }
+        .btn-primary:hover { background: #c2410c; }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--white);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 0.75rem;
+            backdrop-filter: blur(4px);
+            transition: background 0.2s;
+            width: 100%;
+        }
+        @media (min-width: 640px) { .btn-secondary { width: auto; padding: 1rem 2rem; font-size: 1.125rem; } }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+        /* Hero right — roster card */
+        .hero-card-wrap {
+            position: relative;
+            max-width: 28rem;
+            margin: 2rem auto 0;
+            width: 100%;
+        }
+        @media (min-width: 1024px) { .hero-card-wrap { margin-top: 0; max-width: none; } }
+
+        .hero-card-glow {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(234,88,12,0.2), transparent);
+            border-radius: 1rem;
+            filter: blur(24px);
+        }
+
+        .hero-card {
+            position: relative;
+            background: rgba(30,41,59,0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--slate-700);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+        @media (min-width: 640px) { .hero-card { padding: 2rem; } }
+
+        .hero-card-title {
+            color: var(--white);
+            font-weight: 800;
+            font-size: 1.125rem;
+            border-bottom: 1px solid var(--slate-700);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (min-width: 640px) { .hero-card-title { font-size: 1.25rem; } }
+
+        .roster-items { display: flex; flex-direction: column; gap: 1rem; }
+
+        .roster-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: rgba(15,23,42,0.5);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(51,65,85,0.5);
+        }
+
+        .roster-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .roster-icon svg { width: 1.25rem; height: 1.25rem; }
+
+        .roster-icon.orange { background: rgba(234,88,12,0.2); color: var(--brand-500); }
+        .roster-icon.blue   { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .roster-icon.green  { background: rgba(34,197,94,0.2);  color: #4ade80; }
+
+        .roster-item h4 { color: var(--white); font-weight: 700; font-size: 0.875rem; }
+        @media (min-width: 640px) { .roster-item h4 { font-size: 1rem; } }
+        .roster-item p  { color: var(--slate-400); font-size: 0.75rem; margin-top: 0.25rem; }
+        @media (min-width: 640px) { .roster-item p { font-size: 0.875rem; } }
+
+        /* ===================================================
+           METRICS BANNER
+        =================================================== */
+        .metrics-wrap {
+            max-width: 80rem;
+            margin: 0 auto;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 20;
+            margin-top: -1.5rem;
+            margin-bottom: 4rem;
+        }
+        @media (min-width: 640px)  { .metrics-wrap { padding: 0 1.5rem; margin-top: -2.5rem; } }
+        @media (min-width: 1024px) { .metrics-wrap { padding: 0 2rem; margin-top: -4rem; margin-bottom: 5rem; } }
+
+        .metrics-banner {
+            background: var(--brand-500);
+            color: var(--white);
+            border-radius: 1rem 1rem 0 0;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .metrics-banner span {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        @media (min-width: 640px) { .metrics-banner span { font-size: 0.875rem; } }
+
+        .metrics-grid {
+            background: var(--white);
+            border: 1px solid rgba(226,232,240,0.6);
+            border-top: none;
+            border-radius: 0 0 1rem 1rem;
+            box-shadow: var(--shadow-saas);
+            padding: 1.5rem 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem 2rem;
+            text-align: center;
+        }
+        @media (min-width: 640px) { .metrics-grid { gap: 2rem; } }
+        @media (min-width: 1024px) {
+            .metrics-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0;
+                divide-x: 1px solid var(--slate-100);
+            }
+            .metrics-grid > *:not(:first-child) {
+                border-left: 1px solid var(--slate-100);
+            }
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--slate-900);
+        }
+        @media (min-width: 640px) { .metric-value { font-size: 1.875rem; } }
+        .metric-value.orange { color: var(--brand-500); }
+
+        .metric-label {
+            font-size: 0.625rem;
+            font-weight: 600;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+        @media (min-width: 640px) { .metric-label { font-size: 0.75rem; margin-top: 0.5rem; } }
+
+        /* ===================================================
+           HOW IT WORKS
+        =================================================== */
+        #how-it-works {
+            padding: 4rem 0;
+            background: var(--slate-50);
+            scroll-margin-top: 5rem;
+        }
+        @media (min-width: 1024px) { #how-it-works { padding: 5rem 0; } }
+
+        .section-eyebrow {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--brand-500);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        @media (min-width: 640px) { .section-eyebrow { font-size: 0.875rem; } }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--slate-900);
+            letter-spacing: -0.02em;
+        }
+        @media (min-width: 640px)  { .section-title { font-size: 1.875rem; } }
+        @media (min-width: 1024px) { .section-title { font-size: 2.25rem; } }
+
+        .section-sub {
+            margin-top: 1rem;
+            font-size: 1rem;
+            color: var(--slate-600);
+        }
+        @media (min-width: 640px) { .section-sub { font-size: 1.125rem; } }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            max-width: 40rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 640px) { .section-header { margin-bottom: 4rem; } }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) { .steps-grid { grid-template-columns: repeat(3, 1fr); gap: 2rem; } }
+
+        .step-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-saas);
+            border: 1px solid rgba(226,232,240,0.6);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        @media (min-width: 640px) { .step-card { padding: 2rem; } }
+        .step-card:hover { transform: translateY(-4px); }
+
+        .step-num {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: var(--slate-100);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.125rem;
+            color: var(--slate-700);
+            margin-bottom: 1.25rem;
+            transition: background 0.2s, color 0.2s;
+        }
+        @media (min-width: 640px) { .step-num { width: 3rem; height: 3rem; font-size: 1.25rem; margin-bottom: 1.5rem; } }
+        .step-card:hover .step-num { background: var(--brand-500); color: var(--white); }
+
+        .step-card h4 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--slate-900);
+            margin-bottom: 0.5rem;
+        }
+        @media (min-width: 640px) { .step-card h4 { font-size: 1.25rem; margin-bottom: 0.75rem; } }
+        .step-card p { font-size: 0.875rem; color: var(--slate-600); line-height: 1.6; }
+        @media (min-width: 640px) { .step-card p { font-size: 1rem; } }
+
+        /* ===================================================
+           TESTIMONIALS
+        =================================================== */
+        #testimonies {
+            padding: 4rem 0;
+            background: var(--white);
+            border-top: 1px solid rgba(226,232,240,0.6);
+            scroll-margin-top: 5rem;
+        }
+        @media (min-width: 1024px) { #testimonies { padding: 5rem 0; } }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+        @media (min-width: 1024px) { .stats-bar { grid-template-columns: repeat(4, 1fr); margin-bottom: 4rem; } }
+
+        .stat-box {
+            padding: 1.25rem;
+            border-radius: 1rem;
+            border: 1px solid var(--slate-100);
+            background: var(--slate-50);
+        }
+        .stat-box.orange { background: #fff7ed; border-color: #fed7aa; }
+
+        .stat-val {
+            font-size: 1.875rem;
+            font-weight: 800;
+            color: var(--slate-900);
+        }
+        @media (min-width: 640px) { .stat-val { font-size: 2.25rem; } }
+        .stat-val.orange { color: var(--brand-500); }
+
+        .stat-label {
+            font-size: 0.625rem;
+            font-weight: 600;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+        @media (min-width: 640px) { .stat-label { font-size: 0.75rem; } }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) { .testimonials-grid { grid-template-columns: repeat(3, 1fr); gap: 2rem; } }
+
+        .testimonial-card {
+            background: var(--slate-50);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(226,232,240,0.6);
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 640px) { .testimonial-card { padding: 2rem; } }
+        .testimonial-card.dark {
+            background: var(--brand-900);
+            border-color: var(--slate-700);
+        }
+
+        .stars { display: flex; gap: 0; margin-bottom: 1rem; }
+        .star { width: 1.25rem; height: 1.25rem; color: var(--brand-500); }
+
+        .testimonial-card blockquote {
+            font-size: 0.875rem;
+            color: var(--slate-600);
+            line-height: 1.7;
+            font-style: italic;
+            flex-grow: 1;
+        }
+        @media (min-width: 640px) { .testimonial-card blockquote { font-size: 1rem; } }
+        .testimonial-card.dark blockquote { color: var(--slate-300); }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .author-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        .author-avatar.orange { background: rgba(234,88,12,0.2); color: var(--brand-500); }
+        .author-avatar.gray   { background: var(--slate-200); color: var(--slate-600); }
+        .author-avatar.dark   { background: rgba(234,88,12,0.3); color: var(--brand-500); }
+
+        .author-name  { font-weight: 700; color: var(--slate-900); font-size: 0.875rem; }
+        .author-title { color: var(--slate-400); font-size: 0.75rem; margin-top: 0.125rem; }
+        .testimonial-card.dark .author-name { color: var(--white); }
+
+        /* ===================================================
+           SECTORS
+        =================================================== */
+        #sectors {
+            padding: 4rem 0;
+            background: var(--white);
+            border-top: 1px solid rgba(226,232,240,0.6);
+            border-bottom: 1px solid rgba(226,232,240,0.6);
+            scroll-margin-top: 5rem;
+        }
+        @media (min-width: 1024px) { #sectors { padding: 6rem 0; } }
+
+        .sectors-header {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2.5rem;
+        }
+        @media (min-width: 768px) {
+            .sectors-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+                margin-bottom: 3rem;
+            }
+        }
+
+        .sectors-header > div { max-width: 40rem; }
+
+        .sectors-link {
+            display: none;
+            align-items: center;
+            gap: 0.25rem;
+            color: var(--brand-500);
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+        @media (min-width: 768px) { .sectors-link { display: inline-flex; } }
+        .sectors-link:hover { color: var(--brand-900); }
+        .sectors-link svg { width: 1rem; height: 1rem; }
+
+        .sectors-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        @media (min-width: 640px) { .sectors-grid { grid-template-columns: 1fr 1fr; gap: 1.25rem; } }
+        @media (min-width: 1024px) { .sectors-grid { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; } }
+
+        .sector-card {
+            padding: 1.25rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(226,232,240,0.6);
+            background: var(--slate-50);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.2s;
+        }
+        @media (min-width: 640px) { .sector-card { padding: 1.5rem; } }
+        .sector-card:hover {
+            border-color: var(--brand-500);
+            box-shadow: var(--shadow-saas);
+            background: var(--white);
+            transform: translateY(-2px);
+        }
+
+        .sector-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            background: var(--white);
+            border: 1px solid var(--slate-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .sector-card:hover .sector-icon { background: #fff7ed; border-color: #fed7aa; }
+        .sector-icon svg { width: 1.25rem; height: 1.25rem; color: var(--slate-600); }
+        .sector-card:hover .sector-icon svg { color: var(--brand-500); }
+
+        .sector-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--slate-900);
+            margin-bottom: 0.5rem;
+        }
+        @media (min-width: 640px) { .sector-card h3 { font-size: 1.125rem; } }
+        .sector-card p { font-size: 0.875rem; color: var(--slate-500); line-height: 1.5; }
+
+        /* ===================================================
+           CTA SECTION
+        =================================================== */
+        #cta-section {
+            padding: 4rem 0;
+            background: var(--brand-900);
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid var(--slate-800);
+        }
+        @media (min-width: 1024px) { #cta-section { padding: 6rem 0; } }
+
+        .cta-grid-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.3;
+            pointer-events: none;
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .cta-inner {
+            max-width: 56rem;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .cta-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+        @media (min-width: 640px)  { .cta-title { font-size: 1.875rem; margin-bottom: 1.5rem; } }
+        @media (min-width: 1024px) { .cta-title { font-size: 2.25rem; } }
+
+        .cta-sub {
+            font-size: 1rem;
+            color: var(--slate-400);
+            margin-bottom: 2rem;
+            max-width: 40rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 640px) { .cta-sub { font-size: 1.125rem; margin-bottom: 2.5rem; } }
+
+        .cta-btns {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+        @media (min-width: 640px) { .cta-btns { flex-direction: row; gap: 1rem; } }
+
+        /* ===================================================
+           FOOTER
+        =================================================== */
+        footer {
+            background: var(--white);
+            border-top: 1px solid rgba(226,232,240,0.6);
+            padding-top: 3rem;
+            padding-bottom: 2rem;
+        }
+        @media (min-width: 640px) { footer { padding-top: 4rem; } }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+            margin-bottom: 2.5rem;
+        }
+        @media (min-width: 768px) { .footer-grid { grid-template-columns: repeat(3, 1fr); gap: 3rem; } }
+
+        .footer-brand {
+            font-weight: 800;
+            font-size: 1.125rem;
+            letter-spacing: -0.01em;
+            text-transform: uppercase;
+            color: var(--brand-900);
+            display: block;
+            margin-bottom: 0.75rem;
+        }
+        @media (min-width: 640px) { .footer-brand { font-size: 1.25rem; margin-bottom: 1rem; } }
+        .footer-brand .orange { color: var(--brand-500); }
+
+        .footer-desc { font-size: 0.875rem; color: var(--slate-500); line-height: 1.6; max-width: 20rem; }
+
+        .footer-col h4 {
+            font-weight: 700;
+            color: var(--slate-900);
+            margin-bottom: 0.75rem;
+            font-size: 0.9375rem;
+        }
+        @media (min-width: 640px) { .footer-col h4 { margin-bottom: 1rem; } }
+
+        .footer-links { display: flex; flex-direction: column; gap: 0.5rem; }
+        @media (min-width: 640px) { .footer-links { gap: 0.75rem; } }
+
+        .footer-links a {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--brand-500); }
+
+        .footer-address {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--slate-500);
+            line-height: 1.6;
+        }
+        .footer-address svg { width: 1.25rem; height: 1.25rem; color: var(--slate-400); flex-shrink: 0; margin-top: 0.125rem; }
+
+        .footer-bottom {
+            border-top: 1px solid var(--slate-100);
+            padding-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            text-align: center;
+        }
+        @media (min-width: 768px) { .footer-bottom { flex-direction: row; justify-content: space-between; text-align: left; } }
+
+        .footer-copy { font-size: 0.75rem; color: var(--slate-400); }
+        @media (min-width: 640px) { .footer-copy { font-size: 0.875rem; } }
+
+        .footer-legal { display: flex; gap: 1rem; }
+        @media (min-width: 640px) { .footer-legal { gap: 1.5rem; } }
+        .footer-legal a { font-size: 0.75rem; color: var(--slate-400); transition: color 0.2s; }
+        @media (min-width: 640px) { .footer-legal a { font-size: 0.875rem; } }
+        .footer-legal a:hover { color: var(--slate-600); }
+
+        /* ===================================================
+           WHATSAPP FAB
+        =================================================== */
+        .whatsapp-fab {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 50;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 9999px;
+            background-color: #25D366;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            transition: transform 0.2s;
+        }
+        .whatsapp-fab:hover  { transform: scale(1.1); }
+        .whatsapp-fab:active { transform: scale(0.95); }
+        .whatsapp-fab svg { width: 1.75rem; height: 1.75rem; color: var(--white); }
+
+        .whatsapp-pulse {
+            position: absolute;
+            top: -0.25rem;
+            right: -0.25rem;
+            width: 1rem;
+            height: 1rem;
+            background: var(--brand-500);
+            border-radius: 9999px;
+            border: 2px solid var(--white);
+        }
+
+        /* ===================================================
+           SHARED ICON HELPERS
+        =================================================== */
+        .icon { display: block; }
+        .icon-hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="navigationWrapper">
+
+        <div id="statusBar">
+            <span class="live-dot-wrapper">
+                <span class="animate-ping live-dot-ping"></span>
+                <span class="live-dot-core"></span>
+            </span>
+            <span class="typewriter-wrap">
+                <span style="margin-right:0.25rem;">LIVE STATUS:</span>
+                <span id="typewriter-text"></span>
+                <span class="animate-pulse" style="margin-left:0.125rem; font-weight:400;">|</span>
+            </span>
+        </div>
+
+        <header id="mainHeaderBlock">
+            <div class="container">
+                <div class="header-inner">
+
+                    <div class="brand-logo">
+                        <a href="index.html" style="opacity:1; transition:opacity 0.2s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">
+                            <img src="logo/logo.png"
+                                 onerror="this.onerror=null; this.src='https://placehold.co/120x40/ea580c/ffffff?text=LOGO';"
+                                 alt="WELLDONE">
+                        </a>
+                    </div>
+
+                    <div class="brand-center">
+                        <a href="index.html" class="brand-name">
+                            <span class="white">WELLDONE</span> <span class="orange">GROUP</span>
+                        </a>
+                    </div>
+
+                    <div class="brand-center-mobile">
+                        <a href="index.html" class="brand-name">
+                            <span class="white">WELLDONE</span> <span class="orange">GROUP</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-right">
+
+                        <div style="position:relative;">
+                            <button id="desktop-menu-btn" aria-expanded="false">
+                                <span>Menu</span>
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                            </button>
+
+                            <div id="desktop-dropdown" role="menu">
+                                <a href="#how-it-works" class="desktop-nav-link">How It Works</a>
+                                <a href="#sectors"      class="desktop-nav-link">Deployed Expertise</a>
+                                <a href="#testimonies"  class="desktop-nav-link">Testimonies</a>
+                                <hr class="dropdown-divider">
+                                <a href="register-worker.html" class="desktop-nav-link apply">Apply to Work</a>
+                                <a href="register-client.html" class="desktop-nav-link cta">Request For Staff</a>
+                            </div>
+                        </div>
+
+                        <a href="login.html" id="navAuthBtn" title="Portal Login">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                            <span>Login</span>
+                        </a>
+
+                        <button id="mobile-menu-button" aria-label="Toggle navigation" aria-expanded="false">
+                            <svg id="icon-menu" class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                            <svg id="icon-close" class="icon-hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="mobile-menu" role="navigation">
+            <div class="mobile-menu-inner">
+                <a href="#how-it-works" class="mobile-nav-link">How It Works</a>
+                <a href="#sectors"      class="mobile-nav-link">Deployed Expertise</a>
+                <a href="#testimonies"  class="mobile-nav-link">Testimonies</a>
+                <hr class="mobile-divider">
+                <a href="register-worker.html" class="mobile-nav-link apply">Apply to Work</a>
+                <a href="register-client.html" class="mobile-nav-link cta">Request For Staff</a>
+                <a href="login.html" id="mobileAuthBtn" class="mobile-nav-link login">Portal Login</a>
+            </div>
+        </div>
+
+    </div><section id="hero">
+        <div class="hero-glow"></div>
+        <div class="hero-grid"></div>
+
+        <div class="container">
+            <div class="hero-inner">
+
+                <div>
+                    <div class="hero-badge">
+                        <span class="hero-badge-dot animate-pulse"></span>
+                        Live Dispatch Technology
+                    </div>
+
+                    <h1 class="hero-h1">
+                        Say Goodbye to<br>
+                        <span class="gradient">Staffing Shortages.</span>
+                    </h1>
+
+                    <p class="hero-desc">
+                        Are empty shifts slowing down your business? THE WELLDONE GROUP supplies ready-to-work, highly trained professionals directly to your work-site.
+                    </p>
+
+                    <div class="hero-box">
+                        <div class="hero-box-label">
+                            <span>🏢</span> We Partner With Companies!
+                        </div>
+                        <p>If your business needs a reliable staffing partner, we take the stress out of hiring. We supply the manpower; you get the results.</p>
+                    </div>
+
+                    <div class="hero-ctas">
+                        <a href="register-client.html" class="btn-primary">Get The Right People Today</a>
+                        <a href="register-worker.html" class="btn-secondary">Apply to Work</a>
+                    </div>
+                </div>
+
+                <div class="hero-card-wrap">
+                    <div class="hero-card-glow"></div>
+                    <div class="hero-card">
+                        <h3 class="hero-card-title">Our Outsourcing Roster Includes:</h3>
+                        <div class="roster-items">
+                            <div class="roster-item">
+                                <div class="roster-icon orange">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+                                </div>
+                                <div>
+                                    <h4>Forklift & Warehouse Operators</h4>
+                                    <p>Logistics & Supply Chain</p>
+                                </div>
+                            </div>
+                            <div class="roster-item">
+                                <div class="roster-icon blue">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                                </div>
+                                <div>
+                                    <h4>Industrial Cleaners</h4>
+                                    <p>Factories & Heavy Workspaces</p>
+                                </div>
+                            </div>
+                            <div class="roster-item">
+                                <div class="roster-icon green">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                </div>
+                                <div>
+                                    <h4>Hospital Care Specialists</h4>
+                                    <p>Dedicated Patient Support</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <div class="metrics-wrap">
+        <div class="metrics-banner">
+            <span class="live-dot-wrapper">
+                <span class="animate-ping live-dot-ping"></span>
+                <span class="live-dot-core" style="width:0.625rem;height:0.625rem;"></span>
+            </span>
+            <span>128 Verified Workers Available This Week</span>
+        </div>
+        <div class="metrics-grid">
+            <div>
+                <p class="metric-value">95%</p>
+                <p class="metric-label">Shift Fill Rate</p>
+            </div>
+            <div>
+                <p class="metric-value">18m</p>
+                <p class="metric-label">Avg. Dispatch Time</p>
+            </div>
+            <div>
+                <p class="metric-value">24/7</p>
+                <p class="metric-label">Emergency Coverage</p>
+            </div>
+            <div>
+                <p class="metric-value orange">100%</p>
+                <p class="metric-label">Compliance Verified</p>
+            </div>
+        </div>
+    </div>
+
+
+    <section id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-eyebrow">The Engine</span>
+                <h2 class="section-title">How it Works</h2>
+                <p class="section-sub">We replaced manual phone calls with an automated dispatch engine to secure your cover in minutes.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-num">1</div>
+                    <h4>Submit Request</h4>
+                    <p>Clients log into the portal and instantly post an emergency shift, specifying role, headcount, and start time.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">2</div>
+                    <h4>Algorithmic Match</h4>
+                    <p>Our system scans the database, verifying active compliance docs, and broadcasts via WhatsApp to eligible workers.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">3</div>
+                    <h4>Deployment</h4>
+                    <p>Workers accept with one click. The client dashboard updates in real-time as transport clusters are formed and deployed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section id="testimonies">
+        <div class="container">
+
+            <div class="stats-bar">
+                <div class="stat-box orange">
+                    <p class="stat-val orange">500+</p>
+                    <p class="stat-label">Shifts Covered</p>
+                </div>
+                <div class="stat-box">
+                    <p class="stat-val">128</p>
+                    <p class="stat-label">Verified Workers</p>
+                </div>
+                <div class="stat-box">
+                    <p class="stat-val">40+</p>
+                    <p class="stat-label">Client Companies</p>
+                </div>
+                <div class="stat-box">
+                    <p class="stat-val">&lt;20m</p>
+                    <p class="stat-label">Emergency Dispatch</p>
+                </div>
+            </div>
+
+            <div class="section-header" style="margin-bottom:2.5rem;">
+                <span class="section-eyebrow">Client Feedback</span>
+                <h2 class="section-title">Trusted by Operations Teams</h2>
+            </div>
+
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <blockquote>"We had a no-show on a critical morning shift with 3 hours notice. WELLDONE had two replacement forklift drivers on site before the shift started. That speed is unmatched."</blockquote>
+                    <div class="testimonial-author">
+                        <div class="author-avatar orange">JH</div>
+                        <div>
+                            <p class="author-name">James H.</p>
+                            <p class="author-title">Operations Manager, Doxford Logistics</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <blockquote>"The compliance checks give us real peace of mind. Every single worker that walks through our warehouse has been fully vetted. We've been using WELLDONE consistently for six months now."</blockquote>
+                    <div class="testimonial-author">
+                        <div class="author-avatar gray">SR</div>
+                        <div>
+                            <p class="author-name">S. Robinson</p>
+                            <p class="author-title">Site Manager, Washington Distribution</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card dark">
+                    <div class="stars">
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="star" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <blockquote>"Switched from our previous agency after the third failed shift fill. WELLDONE has covered every single request since. Reliable, professional, and fast. The WhatsApp updates are a game-changer."</blockquote>
+                    <div class="testimonial-author">
+                        <div class="author-avatar dark">MT</div>
+                        <div>
+                            <p class="author-name">M. Thompson</p>
+                            <p class="author-title">Logistics Director, Sunderland NE</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <section id="sectors">
+        <div class="container">
+            <div class="sectors-header">
+                <div>
+                    <h2 class="section-title">Deployed Expertise</h2>
+                    <p class="section-sub" style="margin-top:0.5rem;">Every worker in our network goes through strict compliance checks before they ever see a broadcasted shift.</p>
+                </div>
+                <a href="register-client.html" class="sectors-link">
+                    Request Staff
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+
+            <div class="sectors-grid">
+                <div class="sector-card">
+                    <div class="sector-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <h3>Warehouse Ops</h3>
+                    <p>Pickers, packers, and operatives ready for high-volume logistics handling.</p>
+                </div>
+                <div class="sector-card">
+                    <div class="sector-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+                    </div>
+                    <h3>Forklift Drivers</h3>
+                    <p>Fully ticketed Counterbalance and Reach driver deployment to keep docks moving.</p>
+                </div>
+                <div class="sector-card">
+                    <div class="sector-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    </div>
+                    <h3>Construction</h3>
+                    <p>CSCS-certified site labourers to keep heavy timelines moving efficiently.</p>
+                </div>
+                <div class="sector-card">
+                    <div class="sector-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                    </div>
+                    <h3>Industrial Cleaning</h3>
+                    <p>Commercial and intensive cleanups tailored for factories and heavy workspaces.</p>
+                </div>
+                <div class="sector-card">
+                    <div class="sector-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                    <h3>Manufacturing</h3>
+                    <p>Production line workers and assembly operatives for consistent factory coverage.</p>
+                </div>
+                <div class="sector-card">
+                    <div class="sector-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    </div>
+                    <h3>Healthcare Support</h3>
+                    <p>Compassionate, vetted hospital care specialists dedicated to patient support.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section id="cta-section">
+        <div class="cta-grid-bg"></div>
+        <div class="container">
+            <div class="cta-inner">
+                <h2 class="cta-title">Ready to optimize your workforce?</h2>
+                <p class="cta-sub">Join the forward-thinking companies relying on the WELLDONE GROUP infrastructure to eliminate operational downtime.</p>
+                <div class="cta-btns">
+                    <a href="register-client.html" class="btn-primary">Request Staff Now</a>
+                    <a href="register-worker.html" class="btn-secondary">Apply to Work</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <span class="footer-brand">WELLDONE <span class="orange">GROUP</span></span>
+                    <p class="footer-desc">The premier technology-driven workforce supply chain for logistics, industrial, and healthcare operations.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Platform</h4>
+                    <div class="footer-links">
+                        <a href="login.html">Portal Login</a>
+                        <a href="register-worker.html">Worker Application</a>
+                        <a href="register-client.html">Client Onboarding</a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact HQ</h4>
+                    <div class="footer-address">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span>5 Booth St, Millfield<br>Sunderland, SR4 6HT</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copy">&copy; 2026 WELLDONE GROUP. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+    <a href="https://wa.me/447000000000?text=Hi%2C%20I%20need%20to%20request%20emergency%20staff%20cover"
+       target="_blank" rel="noopener"
+       class="whatsapp-fab"
+       aria-label="Contact us on WhatsApp">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        <span class="whatsapp-pulse animate-pulse"></span>
+    </a>
+
+
+    <script>
+    (function () {
+        'use strict';
+
+        /* ── Scroll: header style ── */
+        const header = document.getElementById('mainHeaderBlock');
+        window.addEventListener('scroll', function () {
+            if ((window.scrollY || document.documentElement.scrollTop) > 10) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        }, { passive: true });
+
+        /* ── Desktop dropdown ── */
+        const desktopBtn      = document.getElementById('desktop-menu-btn');
+        const desktopDropdown = document.getElementById('desktop-dropdown');
+        let ddOpen = false;
+
+        function openDD()  { ddOpen = true;  desktopDropdown.classList.add('open');    desktopBtn.setAttribute('aria-expanded', 'true'); }
+        function closeDD() { ddOpen = false; desktopDropdown.classList.remove('open'); desktopBtn.setAttribute('aria-expanded', 'false'); }
+
+        desktopBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            ddOpen ? closeDD() : openDD();
+        });
+        document.addEventListener('click', function (e) {
+            if (ddOpen && !desktopDropdown.contains(e.target)) closeDD();
+        });
+        desktopDropdown.querySelectorAll('.desktop-nav-link').forEach(function (link) {
+            link.addEventListener('click', closeDD);
+        });
+
+        /* ── Mobile menu ── */
+        const mobileBtn   = document.getElementById('mobile-menu-button');
+        const mobileMenu  = document.getElementById('mobile-menu');
+        const iconMenu    = document.getElementById('icon-menu');
+        const iconClose   = document.getElementById('icon-close');
+
+        function openMobile() {
+            mobileMenu.classList.add('open');
+            iconMenu.classList.add('icon-hidden');  iconMenu.classList.remove('icon');
+            iconClose.classList.remove('icon-hidden'); iconClose.classList.add('icon');
+            header.classList.add('scrolled');
+            mobileBtn.setAttribute('aria-expanded', 'true');
+        }
+        function closeMobile() {
+            mobileMenu.classList.remove('open');
+            iconClose.classList.add('icon-hidden'); iconClose.classList.remove('icon');
+            iconMenu.classList.remove('icon-hidden'); iconMenu.classList.add('icon');
+            if ((window.scrollY || document.documentElement.scrollTop) <= 10) header.classList.remove('scrolled');
+            mobileBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        mobileBtn.addEventListener('click', function () {
+            mobileMenu.classList.contains('open') ? closeMobile() : openMobile();
+        });
+        mobileMenu.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', closeMobile);
+        });
+
+        /* ── Typewriter ── */
+        var phrases = [
+            'Emergency cover available today',
+            '125+ Verified Workers Ready',
+            'Average dispatch time: 20 minutes',
+            '100% compliance checked and vetted'
+        ];
+        var idx = 0, charIdx = 0, deleting = false, speed = 80;
+        var el = document.getElementById('typewriter-text');
+
+        function type() {
+            if (!el) return;
+            var phrase = phrases[idx];
+            if (deleting) {
+                el.textContent = phrase.substring(0, charIdx - 1);
+                charIdx--;
+                speed = 30;
+            } else {
+                el.textContent = phrase.substring(0, charIdx + 1);
+                charIdx++;
+                speed = 80;
+            }
+            if (!deleting && charIdx === phrase.length) { deleting = true; speed = 2500; }
+            else if (deleting && charIdx === 0)          { deleting = false; idx = (idx + 1) % phrases.length; speed = 500; }
+            setTimeout(type, speed);
+        }
+        type();
+
+        /* ── Supabase Auth Check ── */
+        try {
+            const SUPABASE_URL = 'https://eftexnivgkchhrulryan.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_PTpRBa91vJXaLpV6Ku29bQ_tz33JHRD';
+            
+            const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            client.auth.getSession().then(function (res) {
+                if (res.data && res.data.session) {
+                    var navBtn    = document.getElementById('navAuthBtn');
+                    var mobileAB  = document.getElementById('mobileAuthBtn');
+                    var dashHTML  = '<svg style="width:1rem;height:1rem;margin-right:0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span>Go to Dashboard</span>';
+                    
+                    if (navBtn)   { 
+                        navBtn.innerHTML = dashHTML; 
+                        navBtn.style.background = 'var(--brand-500)'; 
+                        navBtn.style.borderColor = 'var(--brand-500)'; 
+                    }
+                    if (mobileAB) { 
+                        mobileAB.textContent = 'Go to Dashboard'; 
+                    }
+                }
+            });
+        } catch(e) {
+            console.log('Supabase: pending configuration.');
+        }
+
+    })();
+    </script>
+
+</body>
+</html>
